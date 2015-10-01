@@ -837,7 +837,7 @@ class acd(cloudservice):
     def getRootID(self):
 
         # retrieve all items
-        url = self.API_URL +'nodes?filters=kind:FOLDER AND isRoot:true'
+        url = self.API_URL + 'nodes?filters=kind:FOLDER+AND+isRoot:true'
 
         resourceID = ''
         while True:
