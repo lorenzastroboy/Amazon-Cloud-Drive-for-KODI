@@ -1,2 +1,5 @@
+Version 0.1.2
+- add endpoint logic
+- contributions merge from jbuchbinder (Readme and acd url fixes)
 Version 0.1.1
 - Initial version
