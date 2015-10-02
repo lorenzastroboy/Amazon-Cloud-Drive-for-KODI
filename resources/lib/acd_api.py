@@ -369,7 +369,7 @@ class acd(cloudservice):
         else:
             url = url +'/'+ str(folderName) + '/children'
 
-
+        baseURL = url
         mediaFiles = []
         while True:
             req = urllib2.Request(url, None, self.getHeadersList())
@@ -397,7 +397,7 @@ class acd(cloudservice):
 
             # parsing page for videos
             # video-entry
-            for r2 in re.finditer('\"data\"\:\[(\{.*?)\s*\]\,\"count\"' ,response_data, re.DOTALL):
+            for r2 in re.finditer('\"data\"\:\[(\{.*?)\s*\][^\]]*\,\"count\"' ,response_data, re.DOTALL):
                 entryS = r2.group(1)
                 folderFanart = ''
                 folderIcon = ''
@@ -425,98 +425,21 @@ class acd(cloudservice):
                         mediaFiles.append(media)
 
             # look for more pages of videos
-            nextURL = ''
-            for r in re.finditer('\"nextLink\"\:\s+\"([^\"]+)\"' ,
+            nextToken = ''
+            for r in re.finditer('\"nextToken\"\:\"([^\"]+)\"' ,
                              response_data, re.DOTALL):
-                nextURL = r.group(1)
+                nextToken = r.group(1)
 
 
             # are there more pages to process?
-            if nextURL == '':
+            if nextToken == '':
                 break
             else:
-                url = nextURL
+                url = baseURL + '?startToken='+str(nextToken)
 
         return mediaFiles
 
 
-
-
-    ##
-    # retrieve a list of videos, using playback type stream
-    #   parameters: prompt for video quality (optional), cache type (optional)
-    #   returns: list of videos
-    ##
-    def scanMediaList(self, folderName):
-
-        # retrieve all items
-        url = self.metaURL +'files/'
-
-        url = url + "?q='"+str(folderName)+"'+in+parents"
-
-        mediaFiles = []
-        while True:
-            req = urllib2.Request(url, None, self.getHeadersList())
-
-            # if action fails, validate login
-            try:
-                response = urllib2.urlopen(req)
-            except urllib2.URLError, e:
-                if e.code == 403 or e.code == 401:
-                    self.refreshToken()
-                    req = urllib2.Request(url, None, self.getHeadersList())
-                    try:
-                        response = urllib2.urlopen(req)
-                    except urllib2.URLError, e:
-                        xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                        self.crashreport.sendError('getMediaList',str(e))
-                        return
-                else:
-                    xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                    self.crashreport.sendError('getMediaList',str(e))
-                    return
-
-            response_data = response.read()
-            response.close()
-
-            # parsing page for videos
-            # video-entry
-            for r2 in re.finditer('\"items\"\:\s+\[[^\{]+(\{.*?)\}\s+\]\s+\}' ,response_data, re.DOTALL):
-                entryS = r2.group(1)
-                folderFanart = ''
-                folderIcon = ''
-                for r1 in re.finditer('\{(.*?)\"appDataContents\"\:' , entryS, re.DOTALL):
-                    entry = r1.group(1)
-
-                    if 'fanart' in entry:
-                        fanart = self.getMediaInfo(entry, folderName=folderName)
-                        if fanart != '':
-#                            fanart = re.sub('\&gd\=true', '', fanart)
-                            #need to cache
-                            folderFanart = fanart + '|' + self.getHeadersEncoded()
-                    elif 'folder' in entry:
-                        foldericon = self.getMediaInfo(entry, folderName=folderName)
-                        if foldericon != '':
-#                            foldericon = re.sub('\&gd\=true', '', foldericon)
-                            #need to cache
-                            folderIcon = foldericon + '|' + self.getHeadersEncoded()
-
-                    self.setProperty(folderName,'icon', 1)
-
-            # look for more pages of videos
-            nextURL = ''
-            for r in re.finditer('\"nextLink\"\:\s+\"([^\"]+)\"' ,
-                             response_data, re.DOTALL):
-                nextURL = r.group(1)
-
-
-            # are there more pages to process?
-            if nextURL == '':
-                break
-            else:
-                url = nextURL
-
-        return mediaFiles
 
 
     ##
@@ -745,6 +668,7 @@ class acd(cloudservice):
             url = url + "?q=title+contains+'" + str(encodedTitle) + "'"
 
         srt = []
+        baseURL = url
         while True:
             req = urllib2.Request(url, None, self.getHeadersList())
 
@@ -806,17 +730,17 @@ class acd(cloudservice):
 
 
             # look for more pages of videos
-            nextURL = ''
-            for r in re.finditer('\"nextLink\"\:\s+\"([^\"]+)\"' ,
+            nextToken = ''
+            for r in re.finditer('\"nextToken\"\:\"([^\"]+)\"' ,
                              response_data, re.DOTALL):
-                nextURL = r.group(1)
+                nextToken = r.group(1)
 
 
             # are there more pages to process?
-            if nextURL == '':
+            if nextToken == '':
                 break
             else:
-                url = nextURL
+                url = baseURL + '?startToken='+ str(nextToken)
 
         return srt
 
@@ -830,57 +754,8 @@ class acd(cloudservice):
     ##
     def getTTS(self, baseURL):
 
-        if baseURL == '':
-            return ''
-        # retrieve all items
-        url = baseURL +'&hl=en-US&type=list&tlangs=1&fmts=1&vssids=1'
 
-        cc = []
-        while True:
-            req = urllib2.Request(url, None, self.getHeadersList())
-
-            # if action fails, validate login
-            try:
-                response = urllib2.urlopen(req)
-            except urllib2.URLError, e:
-              if e.code == 403 or e.code == 401:
-                self.refreshToken()
-                req = urllib2.Request(url, None, self.getHeadersList())
-                try:
-                  response = urllib2.urlopen(req)
-                except urllib2.URLError, e:
-                  xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                  self.crashreport.sendError('getTTS',str(e))
-                  return
-              else:
-                xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                self.crashreport.sendError('getTTS',str(e))
-                return
-
-            response_data = response.read()
-            response.close()
-
-            # parsing page for videos
-            # video-entry
-            count=0
-            for r in re.finditer('\<track id\=\"\d+\" .*? lang_code\=\"([^\"]+)\" .*? lang_translated\=\"([^\"]+)\" [^\>]+\>' ,response_data, re.DOTALL):
-                lang,language = r.groups()
-                cc.append([ '.'+str(count) + '.'+ str(lang) + '.srt',baseURL+'&type=track&lang='+str(lang)+'&name&kind&fmt=1'])
-
-            # look for more pages of videos
-            nextURL = ''
-            for r in re.finditer('\"nextLink\"\:\s+\"([^\"]+)\"' ,
-                             response_data, re.DOTALL):
-                nextURL = r.group(1)
-
-
-            # are there more pages to process?
-            if nextURL == '':
-                break
-            else:
-                url = nextURL
-
-        return cc
+        return #not implemented for Amazon
 
 
     ##
@@ -894,6 +769,7 @@ class acd(cloudservice):
         url = self.metaURL + 'nodes?filters=kind:FOLDER+AND+isRoot:true'
 
         resourceID = ''
+        baseURL = url
         while True:
             req = urllib2.Request(url, None, self.getHeadersList())
 
@@ -936,17 +812,17 @@ class acd(cloudservice):
                     return resourceID
 
             # look for more pages of videos
-            nextURL = ''
-            for r in re.finditer('\"nextLink\"\:\s+\"([^\"]+)\"' ,
+            nextToken = ''
+            for r in re.finditer('\"nextToken\"\:\"([^\"]+)\"' ,
                              response_data, re.DOTALL):
-                nextURL = r.group(1)
+                nextToken = r.group(1)
 
 
             # are there more pages to process?
-            if nextURL == '':
+            if nextToken == '':
                 break
             else:
-                url = nextURL
+                url = baseURL + '&startToken='+ str(nextToken)
 
         return resourceID
 
@@ -1008,113 +884,7 @@ class acd(cloudservice):
     ##
     def decryptFolder(self,key,path,folder):
 
-        # retrieve all items
-        url = PROTOCOL+'docs.google.com/feeds/default/private/full'
-
-        # retrieve root items
-        if folder == '':
-            url = url + '/folder%3Aroot/contents'
-        # retrieve folder items
-        else:
-            url = url + '/folder%3A'+folder+'/contents'
-
-        import xbmcvfs
-        xbmcvfs.mkdir(path + '/'+folder)
-
-        while True:
-            req = urllib2.Request(url, None, self.getHeadersList())
-
-            # if action fails, validate login
-            try:
-              response = urllib2.urlopen(req)
-            except urllib2.URLError, e:
-              if e.code == 403 or e.code == 401:
-                self.refreshToken()
-                req = urllib2.Request(url, None, self.getHeadersList())
-                try:
-                  response = urllib2.urlopen(req)
-                except urllib2.URLError, e:
-                    xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                    self.crashreport.sendError('decryptFolder',str(e))
-                    return
-              else:
-                xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                self.crashreport.sendError('decryptFolder',str(e))
-                return
-
-            response_data = response.read()
-            response.close()
-
-            downloadList = []
-            # video-entry
-            for r in re.finditer('\<entry[^\>]+\>(.*?)\<\/entry\>' ,response_data, re.DOTALL):
-                entry = r.group(1)
-
-                # fetch folder
-                for r in re.finditer('\<gd\:resourceId\>([^\:]*)\:?([^\<]*)\</gd:resourceId\>' ,
-                             entry, re.DOTALL):
-                  resourceType,resourceID = r.groups()
-
-                  # entry is NOT a folder
-                  if not (resourceType == 'folder'):
-                      # fetch video title, download URL and docid for stream link
-                      # Amazon Cloud Drive API format
-                      for r in re.finditer('<title>([^<]+)</title><content type=\'(video)\/[^\']+\' src=\'([^\']+)\'.+?rel=\'http://schemas.google.com/docs/2007/thumbnail\' type=\'image/[^\']+\' href=\'([^\']+)\'' ,
-                             entry, re.DOTALL):
-                          title,mediaType,url,thumbnail = r.groups()
-
-                      #for playing video.google.com videos linked to your Amazon Cloud Drive account
-                      # Google Docs & Google Video API format
-                      for r in re.finditer('<title>([^<]+)</title><link rel=\'alternate\' type=\'text/html\' href=\'([^\']+).+?rel=\'http://schemas.google.com/docs/2007/thumbnail\' type=\'image/[^\']+\' href=\'([^\']+)\'' ,
-                             entry, re.DOTALL):
-                          title,url,thumbnail = r.groups()
-
-                      # audio
-                      for r in re.finditer('<title>([^<]+)</title><content type=\'audio\/[^\']+\' src=\'([^\']+)\'' ,
-                             entry, re.DOTALL):
-                          title,url = r.groups()
-
-                      # pictures
-                      for r in re.finditer('<title>([^<]+)</title><content type=\'image\/[^\']+\' src=\'([^\']+)\'' ,
-                             entry, re.DOTALL):
-                          title,url = r.groups()
-
-                          url = re.sub('&amp;', '&', url)
-                          filename = path + '/'+folder+'/'+ encryption.decrypt(title)
-                          if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                              open(filename, 'a').close()
-                              downloadList.append(downloadfile.downloadfile(url,filename))
-                              #self.downloadDecryptPicture(key, url,filename)
-
-
-                      # pictures
-                      for r in re.finditer('<title>([^<]+)</title><content type=\'application\/[^\']+\' src=\'([^\']+)\'' ,
-                             entry, re.DOTALL):
-                          title,url = r.groups()
-
-                          url = re.sub('&amp;', '&', url)
-                          filename = path + '/'+folder+'/'+ encryption.decrypt(title)
-                          if not os.path.exists(filename) or os.path.getsize(filename) == 0:
-                              open(filename, 'a').close()
-                              downloadList.append(downloadfile.downloadfile(url,filename))
-                              #self.downloadDecryptPicture(key, url,filename)
-
-            if downloadList:
-                for file in sorted(downloadList, key=lambda item: item.name):
-                    self.downloadDecryptPicture(key, file.url,file.name)
-
-            # look for more pages of videos
-            nextURL = ''
-            for r in re.finditer('<link rel=\'next\' type=\'[^\']+\' href=\'([^\']+)\'' ,
-                             response_data, re.DOTALL):
-                nextURL = r.groups()
-
-
-            # are there more pages to process?
-            if nextURL == '':
-                break
-            else:
-                url = nextURL[0]
+        return #not implemented for Amazon
 
 
     ##
