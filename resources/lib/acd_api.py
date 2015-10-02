@@ -68,6 +68,7 @@ class acd(cloudservice):
 
     API_URL = PROTOCOL+'drive.amazonaws.com/drive/v1/'
 
+
     ##
     # initialize (save addon, instance name, user agent)
     ##
@@ -112,6 +113,59 @@ class acd(cloudservice):
         #***
         self.cache = cache.cache()
 
+        #amazon api
+        self.metaURL = addon.getSetting(instanceName+'_metaurl')
+        self.contentURL = addon.getSetting(instanceName+'_contenturl')
+        if (self.metaURL == '' or self.contentURL == ''):
+            self.getEndPoint()
+        ##
+
+
+    ##
+    # Amazon API specific
+    # get the user's endpoint content and meta URL
+    #   parameters: none
+    #   returns: none
+    ##
+    def getEndPoint(self):
+
+        url = self.API_URL + 'account/endpoint'
+        req = urllib2.Request(url, None, self.getHeadersList())
+
+        # if action fails, validate login
+        try:
+            response = urllib2.urlopen(req)
+        except urllib2.URLError, e:
+            if e.code == 403 or e.code == 401:
+                self.refreshToken()
+                req = urllib2.Request(url, None, self.getHeadersList())
+                try:
+                    response = urllib2.urlopen(req)
+                except urllib2.URLError, e:
+                    xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
+                    self.crashreport.sendError('getEndPoint',str(e))
+                    return
+            else:
+                xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
+                self.crashreport.sendError('getEndPoint',str(e))
+                return
+
+        response_data = response.read()
+        response.close()
+
+        # retrieve contentURL
+        for r in re.finditer('\"contentUrl\"\:\s?\"([^\"]+)\"',
+                             response_data, re.DOTALL):
+            contentURL = r.group(1)
+            self.addon.setSetting(self.instanceName + '_contenturl', contentURL)
+            self.contentURL = contentURL
+
+        # retrieve contentURL
+        for r in re.finditer('\"metadataUrl\"\:\s?\"([^\"]+)\"',
+                             response_data, re.DOTALL):
+            metaURL = r.group(1)
+            self.addon.setSetting(self.instanceName + '_metaurl', metaURL)
+            self.contentURL = metaURL
 
 
     ##
@@ -304,7 +358,7 @@ class acd(cloudservice):
     def getMediaList(self, folderName=False, title=False, contentType=7):
 
         # retrieve all items
-        url = self.API_URL +'nodes'
+        url = self.metaURL +'nodes'
 
         # default / show root folder
         if folderName == '' or folderName == 'me' or folderName == 'root' or folderName == False:
@@ -396,7 +450,7 @@ class acd(cloudservice):
     def scanMediaList(self, folderName):
 
         # retrieve all items
-        url = self.API_URL +'files/'
+        url = self.metaURL +'files/'
 
         url = url + "?q='"+str(folderName)+"'+in+parents"
 
@@ -506,7 +560,7 @@ class acd(cloudservice):
                   thumbnail = r.group(1)
                   break
 
-                url = self.API_URL +'nodes/' + resourceID + '/content'
+                url = self.contentURL +'nodes/' + resourceID + '/content'
 
                 for r in re.finditer('\"downloadUrl\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
@@ -787,7 +841,7 @@ class acd(cloudservice):
 
             # if action fails, validate login
             try:
-              response = urllib2.urlopen(req)
+                response = urllib2.urlopen(req)
             except urllib2.URLError, e:
               if e.code == 403 or e.code == 401:
                 self.refreshToken()
@@ -837,7 +891,7 @@ class acd(cloudservice):
     def getRootID(self):
 
         # retrieve all items
-        url = self.API_URL + 'nodes?filters=kind:FOLDER+AND+isRoot:true'
+        url = self.metaURL + 'nodes?filters=kind:FOLDER+AND+isRoot:true'
 
         resourceID = ''
         while True:
@@ -903,7 +957,7 @@ class acd(cloudservice):
     ##
     def getDownloadURL(self, docid):
 
-            return self.API_URL +'nodes/' + docid + '/content'
+            return self.contentURL +'nodes/' + docid + '/content'
 
 
     ##
@@ -913,7 +967,7 @@ class acd(cloudservice):
     ##
     def getMediaDetails(self, docid):
 
-            url = self.API_URL +'files/' + docid
+            url = self.metaURL +'files/' + docid
 
             req = urllib2.Request(url, None, self.getHeadersList())
 
@@ -1409,7 +1463,7 @@ class acd(cloudservice):
             response = urllib2.urlopen(req)
 #            response = opener.open(url, None,urllib.urlencode(header))
         except urllib2.URLError, e:
-              if e.code == 401:
+            if e.code == 401:
                 self.refreshToken()
                 req = urllib2.Request(url, propertyValues, self.getHeadersList())
                 req.get_method = lambda: 'PATCH'
@@ -1426,7 +1480,7 @@ class acd(cloudservice):
                       return
 
               #maybe doesn't exist - try to create
-              elif e.code != 403:
+            elif e.code != 403:
 
 #              else:
                   url = self.API_URL +'files/' + str(docid) + '/properties'
@@ -1442,7 +1496,7 @@ class acd(cloudservice):
                         #self.crashreport.sendError('setProperty',str(e))
                         return
               # some other kind of error
-              else:
+            else:
                   return
 
         response_data = response.read()
