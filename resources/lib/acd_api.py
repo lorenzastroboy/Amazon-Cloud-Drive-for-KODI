@@ -407,22 +407,6 @@ class acd(cloudservice):
                 entryS = r2.group(1)
                 folderFanart = ''
                 folderIcon = ''
-                for r1 in re.finditer('\{(.*?)\}' , entryS, re.DOTALL):
-                    entry = r1.group(1)
-
-                    if 'fanart' in entry:
-                        fanart = self.getMediaInfo(entry, folderName=folderName)
-                        if fanart != '':
-#                            fanart = re.sub('\&gd\=true', '', fanart)
-                            #need to cache
-                            folderFanart = fanart + '|' + self.getHeadersEncoded()
-                    elif 'folder' in entry:
-                        foldericon = self.getMediaInfo(entry, folderName=folderName)
-                        if foldericon != '':
-#                            foldericon = re.sub('\&gd\=true', '', foldericon)
-                            #need to cache
-                            folderIcon = foldericon + '|' + self.getHeadersEncoded()
-
 
                 for r1 in re.finditer('\{(.*?)\,\"status\"\:\"[^\"]+\"\}' , entryS, re.DOTALL):
                     entry = r1.group(1)
@@ -528,7 +512,7 @@ class acd(cloudservice):
                     return media
 
                 # entry is a video
-                elif (fileExtension.lower() not in ('sub') and (resourceType == 'application/vnd.google-apps.video' or 'video' in resourceType or fileExtension.lower() in ('mkv')) and contentType in (0,1,2,4,7)):
+                elif ((fileExtension == '' or fileExtension.lower() not in ('sub')) and (resourceType == 'application/vnd.google-apps.video' or 'video' in resourceType or resourceType in ('application/x-matroska') or fileExtension.lower() in ('mkv')) and contentType in (0,1,2,4,7)):
                     mediaFile = file.file(resourceID, title, title, self.MEDIA_TYPE_VIDEO, fanart, thumbnail, size=fileSize, resolution=[height,width], playcount=int(0), duration=duration)
 
                     if self.settings.parseTV:
