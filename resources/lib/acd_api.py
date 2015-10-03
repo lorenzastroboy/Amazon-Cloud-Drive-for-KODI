@@ -361,9 +361,15 @@ class acd(cloudservice):
         url = self.metaURL +'nodes'
 
         # default / show root folder
-        if folderName == '' or folderName == 'me' or folderName == 'root' or folderName == False:
+        # search for title
+        if title != False or folderName == 'SAVED SEARCH':
+            encodedTitle = re.sub(' ', '+', title)
+            encodedTitle = re.sub('^\*', '', encodedTitle)
+            url = url + "?filters=name:" + str(encodedTitle)
+        elif folderName == '' or folderName == 'me' or folderName == 'root' or folderName == False:
             folderID = self.getRootID()
             url = url +'/'+ str(folderID) + '/children'
+
 
         # retrieve folder items
         else:
