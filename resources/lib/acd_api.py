@@ -938,7 +938,8 @@ class acd(cloudservice):
             # new method of fetching original stream -- using alt=media
             url = 'https://content-na.drive.amazonaws.com/cdproxy/'+'nodes/' + str(docid) + '/content'
             mediaURLs.append(mediaurl.mediaurl(url, 'original', 0, 9999))
-
+            #validate token before proceeding
+            self.getEndPoint()
 
 
 

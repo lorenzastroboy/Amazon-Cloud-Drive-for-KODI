@@ -1,3 +1,5 @@
+Version 0.1.5
+- fix: token timeout with playback via STRM
 Version 0.1.4
 - fix: missing files with extension "" such as some application/x-matroska
 - implement: SEARCH
