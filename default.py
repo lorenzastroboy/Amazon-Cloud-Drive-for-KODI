@@ -88,7 +88,7 @@ mode = mode.lower()
 
 #*** old - acd
 # allow for playback of public videos without authentication
-if (mode == 'streamurl'):
+if (mode == 'shared'):
   authenticate = False
 else:
   authenticate = True
@@ -721,13 +721,13 @@ elif mode == 'slideshow':
 # for video files
 # force stream - play a video given its url
 ###
-elif mode == 'streamurl':
+elif mode == 'shared':
 
-    url = settings.getParameter('url',0)
+    shareid = settings.getParameter('shareid',0)
     title = settings.getParameter('title')
 
 
-    promptQuality = settings.getSetting('prompt_quality', True)
+    #promptQuality = settings.getSetting('prompt_quality', True)
 
     mediaURLs = service.getPublicStream(url)
     options = []
@@ -737,10 +737,10 @@ elif mode == 'streamurl':
         for mediaURL in mediaURLs:
             options.append(mediaURL.qualityDesc)
 
-        if promptQuality:
-            ret = xbmcgui.Dialog().select(addon.getLocalizedString(30033), options)
-        else:
-            ret = 0
+#        if promptQuality:
+#            ret = xbmcgui.Dialog().select(addon.getLocalizedString(30033), options)
+#        else:
+        ret = 0
 
         playbackURL = mediaURLs[ret].url
 
