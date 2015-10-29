@@ -431,6 +431,82 @@ class acd(cloudservice):
 
 
 
+    ##
+    # retrieve a list of videos, using playback type stream
+    #   parameters: prompt for video quality (optional), cache type (optional)
+    #   returns: list of videos
+    ##
+    def getSharedMediaList(self, sharedID, folderID=False, contentType=7):
+
+
+        if folderID != False:
+            url = self.API_URL + '/' + folderID + '/children?resourceVersion=V2&ContentType=JSON&limit=5&sort=%5B%22kind+DESC%22%2C+%22modifiedDate+DESC%22%5D&asset=ALL&tempLink=true&shareId=' + sharedID
+        else:
+            url = self.API_URL +'shares/' + sharedID + '?resourceVersion=V2&ContentType=JSON&asset=ALL'
+
+        baseURL = url
+        mediaFiles = []
+        while True:
+            req = urllib2.Request(url, None, self.getHeadersList())
+
+            # if action fails, validate login
+            try:
+                response = urllib2.urlopen(req)
+            except urllib2.URLError, e:
+                if e.code == 403 or e.code == 401:
+                    self.refreshToken()
+                    req = urllib2.Request(url, None, self.getHeadersList())
+                    try:
+                        response = urllib2.urlopen(req)
+                    except urllib2.URLError, e:
+                        xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
+                        self.crashreport.sendError('getSharedMediaList',str(e))
+                        return
+                else:
+                    xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
+                    self.crashreport.sendError('getSharedMediaList',str(e))
+                    return
+
+            response_data = response.read()
+            response.close()
+
+
+            #shared node entry point
+            for r2 in re.finditer('\"nodeInfo\"\:(\{[^\}]+)\s*\}' ,response_data, re.DOTALL):
+                entry = r2.group(1)
+                folderFanart = ''
+                folderIcon = ''
+                media = self.getMediaPackage(entry, folderName=folderID, contentType=contentType, fanart=folderFanart, icon=folderIcon)
+                if media is not None:
+                    mediaFiles.append(media)
+
+            #folder
+            for r2 in re.finditer('\"data\"\:\[(\{.*?)\s*\][^\]]*\,\"count\"' ,response_data, re.DOTALL):
+                entryS = r2.group(1)
+                folderFanart = ''
+                folderIcon = ''
+
+                for r1 in re.finditer('\{(.*?)\,\"status\"\:\"[^\"]+\"\}' , entryS, re.DOTALL):
+                    entry = r1.group(1)
+                    media = self.getMediaPackage(entry, folderName=folderID, contentType=contentType, fanart=folderFanart, icon=folderIcon)
+                    if media is not None:
+                        mediaFiles.append(media)
+
+            # look for more pages of videos
+            nextToken = ''
+            for r in re.finditer('\"nextToken\"\:\"([^\"]+)\"' ,
+                             response_data, re.DOTALL):
+                nextToken = r.group(1)
+
+
+            # are there more pages to process?
+            if nextToken == '':
+                break
+            else:
+                url = baseURL + '?startToken='+str(nextToken)
+
+        return mediaFiles
+
 
     ##
     # retrieve a media package
@@ -447,62 +523,61 @@ class acd(cloudservice):
                 thumbnail = ''
                 fileExtension = ''
 
-                url = ''
                 for r in re.finditer('\"id\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  resourceID = r.group(1)
-                  break
+                    resourceID = r.group(1)
+                    break
                 for r in re.finditer('\"kind\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  resourceType = r.group(1)
-                  break
+                    resourceType = r.group(1)
+                    break
                 for r in re.finditer('\"contentType\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  resourceType = r.group(1)
-                  break
+                    resourceType = r.group(1)
+                    break
                 for r in re.finditer('\"name\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  title = r.group(1)
-                  break
+                    title = r.group(1)
+                    break
                 for r in re.finditer('\"size\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  fileSize = r.group(1)
-                  break
+                    fileSize = r.group(1)
+                    break
                 for r in re.finditer('\"thumbnailLink\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  thumbnail = r.group(1)
-                  break
+                    thumbnail = r.group(1)
+                    break
 
                 url = self.contentURL +'nodes/' + resourceID + '/content'
 
                 for r in re.finditer('\"downloadUrl\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  url = r.group(1)
-                  break
+                    url = r.group(1)
+                    break
                 for r in re.finditer('\"extension\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  fileExtension = r.group(1)
-                  break
+                    fileExtension = r.group(1)
+                    break
                 height =0
                 width = 0
                 for r in re.finditer('\"height\"\:(\d+)' ,
                              entry, re.DOTALL):
-                  height = r.group(1)
-                  break
+                    height = r.group(1)
+                    break
                 for r in re.finditer('\"width\"\:(\d+)' ,
                              entry, re.DOTALL):
-                  width = r.group(1)
-                  break
+                    width = r.group(1)
+                    break
 
                 duration = 0
                 for r in re.finditer('\"duration\"\:(\d+)' ,
                              entry, re.DOTALL):
-                  duration = r.group(1)
-                  duration = int(int(duration) / 1000)
-                  break
+                    duration = r.group(1)
+                    duration = int(int(duration) / 1000)
+                    break
 
                 # entry is a folder
-                if (resourceType == 'FOLDER'):
+                if (resourceType == 'FOLDER' or resourceType == 'SHARED_COLLECTION'):
                     for r in re.finditer('SAVED SEARCH\|([^\|]+)' ,
                              title, re.DOTALL):
                         newtitle = r.group(1)
@@ -610,24 +685,24 @@ class acd(cloudservice):
                 url = ''
                 for r in re.finditer('\"id\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  resourceID = r.group(1)
-                  break
+                    resourceID = r.group(1)
+                    break
                 for r in re.finditer('\"kind\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  resourceType = r.group(1)
-                  break
+                    resourceType = r.group(1)
+                    break
                 for r in re.finditer('\"contentType\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  resourceType = r.group(1)
-                  break
+                    resourceType = r.group(1)
+                    break
                 for r in re.finditer('\"name\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  title = r.group(1)
-                  break
+                    title = r.group(1)
+                    break
                 for r in re.finditer('\"extension\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
-                  fileExtension = r.group(1)
-                  break
+                    fileExtension = r.group(1)
+                    break
 
                 # entry is a photo
                 if ('fanart' in title and (resourceType == 'application/vnd.google-apps.photo' or 'image' in resourceType)):

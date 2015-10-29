@@ -88,10 +88,10 @@ mode = mode.lower()
 
 #*** old - acd
 # allow for playback of public videos without authentication
-if (mode == 'shared'):
-  authenticate = False
-else:
-  authenticate = True
+#if (mode == 'shared'):
+#  authenticate = False
+#else:
+authenticate = True
 ##**
 
 
@@ -278,9 +278,14 @@ if service is None:
     xbmcplugin.endOfDirectory(plugin_handle)
 
 #dump a list of videos available to play
-elif mode == 'main' or mode == 'index':
+elif mode == 'main' or mode == 'index' or  mode == 'shared':
 
     folderName = settings.getParameter('folder', False)
+
+    shared = 0
+    if mode == 'shared':
+        shareID = settings.getParameter('shareid',0)
+
 
     #** testing - acd specific
     try:
@@ -421,7 +426,10 @@ elif mode == 'main' or mode == 'index':
 
 
     else:
-        mediaItems = service.getMediaList(folderName,contentType=contentType)
+        if mode == 'shared':
+            mediaItems = service.getSharedMediaList(shareID, folderName,contentType=contentType)
+        else:
+            mediaItems = service.getMediaList(folderName,contentType=contentType)
 
         if mediaItems:
             for item in mediaItems:
