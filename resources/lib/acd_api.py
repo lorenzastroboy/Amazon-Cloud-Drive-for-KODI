@@ -513,7 +513,7 @@ class acd(cloudservice):
     #   parameters: given an entry
     #   returns: package (folder,file)
     ##
-    def getMediaPackage(self, entry, folderName='',contentType=2, fanart='', icon=''):
+    def getMediaPackage(self, entry, folderName='',contentType=2, fanart='', icon='', sharedID=''):
 
 
                 resourceID = 0
