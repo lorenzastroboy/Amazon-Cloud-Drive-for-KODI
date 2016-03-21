@@ -1,3 +1,4 @@
+- improvements for save to .strm tv shows (preserve . correctly)
 Version 0.1.5
 - fix: token timeout with playback via STRM
 Version 0.1.4
