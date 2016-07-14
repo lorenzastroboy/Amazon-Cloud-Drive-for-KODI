@@ -152,6 +152,18 @@ class gPlayer(xbmc.Player):
 
     def onPlayBackEnded(self):
         print "PLAYBACK ENDED"
+
+        try:
+            exp = re.search('0?(\d+)',  self.package.file.season)
+            season = exp.group(1)
+            exp = re.search('0?(\d+)',  self.package.file.episode)
+            episode = exp.group(1)
+            result = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"filter":{"and": [{"field": "season", "operator": "is", "value": "'+str(season)+'"}, {"field": "episode", "operator": "is", "value": "'+str(episode)+'"}]}}, "id": 1}')
+            exp = re.search('"episodeid":(\d+)', result)
+            episodeID = exp.group(1)
+            #xbmc.executeJSONRPC('{"params": {"episodeid": '+str(episodeID)+', "resume": {"position": '+str(self.time)+', "total":  '+str(self.package.file.duration)+'}}, "jsonrpc": "2.0", "id": "setResumePoint", "method": "VideoLibrary.SetEpisodeDetails"}')
+            xbmc.executeJSONRPC('{"params": {"episodeid": '+str(episodeID)+', "playcount": '+str(self.package.file.playcount+1)+'}, "jsonrpc": "2.0", "id": "setResumePoint", "method": "VideoLibrary.SetEpisodeDetails"}')
+        except: pass
 #        self.next()
         if self.package is not None:
             self.service.setProperty(self.package.file.id,'playcount', int(self.package.file.playcount)+1)
@@ -164,6 +176,19 @@ class gPlayer(xbmc.Player):
         self.isExit = True
     def onPlayBackStopped(self):
         print "PLAYBACK STOPPED"
+        try:
+            #exp = re.search('0?(\d+)',  self.package.file.season)
+            #season = exp.group(1)
+            #exp = re.search('0?(\d+)',  self.package.file.episode)
+            #episode = exp.group(1)
+            season = 6
+            episode = 5
+            result = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"filter":{"and": [{"field": "season", "operator": "is", "value": "'+str(season)+'"}, {"field": "episode", "operator": "is", "value": "'+str(episode)+'"}]}}, "id": 1}')
+            exp = re.search('"episodeid":(\d+)', result)
+            episodeID = exp.group(1)
+            xbmc.executeJSONRPC('{"params": {"episodeid": '+str(episodeID)+', "resume": {"position": '+str(self.time)+', "total":  100}}, "jsonrpc": "2.0", "id": "setResumePoint", "method": "VideoLibrary.SetEpisodeDetails"}')
+            xbmc.executeJSONRPC('{"params": {"episodeid": '+str(episodeID)+', "playcount": 1}, "jsonrpc": "2.0", "method": "VideoLibrary.SetEpisodeDetails"}')
+        except: pass
         if self.package is not None:
             try:
                 self.service.gSpreadsheet.setMediaStatus(self.worksheet,self.package, resume=self.time)
@@ -175,6 +200,18 @@ class gPlayer(xbmc.Player):
 
     def onPlayBackPaused(self):
         print "PLAYBACK Paused"
+
+        try:
+            exp = re.search('0?(\d+)',  self.package.file.season)
+            season = exp.group(1)
+            exp = re.search('0?(\d+)',  self.package.file.episode)
+            episode = exp.group(1)
+            result = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"filter":{"and": [{"field": "season", "operator": "is", "value": "'+str(season)+'"}, {"field": "episode", "operator": "is", "value": "'+str(episode)+'"}]}}, "id": 1}')
+            exp = re.search('"episodeid":(\d+)', result)
+            episodeID = exp.group(1)
+            #xbmc.executeJSONRPC('{"params": {"episodeid": '+str(episodeID)+', "resume": {"position": '+str(self.time)+', "total":  '+str(self.package.file.duration)+'}}, "jsonrpc": "2.0", "id": "setResumePoint", "method": "VideoLibrary.SetEpisodeDetails"}')
+            xbmc.executeJSONRPC('{"params": {"episodeid": '+str(episodeID)+', "playcount": '+str(self.package.file.playcount+1)+'}, "jsonrpc": "2.0", "id": "setResumePoint", "method": "VideoLibrary.SetEpisodeDetails"}')
+        except: pass
         #self.seekTime(10)
 
     def seekTo(self, seek):
