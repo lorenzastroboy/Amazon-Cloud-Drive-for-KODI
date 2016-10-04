@@ -55,8 +55,8 @@ from resources.lib import cache
 # global variables
 PLUGIN_NAME = 'acd'
 #addon = xbmcaddon.Addon(id='plugin.video.acd')
-#addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
-addon = xbmcaddon.Addon(id='plugin.video.acd')
+addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
+#addon = xbmcaddon.Addon(id='plugin.video.acd')
 
 #global variables
 PLUGIN_URL = sys.argv[0]
@@ -496,8 +496,8 @@ elif mode == 'kiosk':
                             player.setService(service)
 #                            player.setContent(episodes)
                             player.setWorksheet(worksheets['db'])
-#                            player.PlayStream('plugin://plugin.video.acd-testing/?mode=video&instance='+str(service.instanceName)+'&title='+episodes[0][3], None,episodes[0][7],episodes[0][2])
-                            player.PlayStream('plugin://plugin.video.acd/?mode=video&instance='+str(service.instanceName)+'&title='+episodes[0][3], None,episodes[0][7],episodes[0][2])
+                            player.PlayStream('plugin://plugin.video.acd-testing/?mode=video&instance='+str(service.instanceName)+'&title='+episodes[0][3], None,episodes[0][7],episodes[0][2])
+#                            player.PlayStream('plugin://plugin.video.acd/?mode=video&instance='+str(service.instanceName)+'&title='+episodes[0][3], None,episodes[0][7],episodes[0][2])
                             #player.next()
                             while not player.isExit:
                                 player.saveTime()

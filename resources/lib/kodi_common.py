@@ -30,8 +30,8 @@ from resources.lib import settings
 
 # global variables
 #addon = xbmcaddon.Addon(id='plugin.video.gdrive')
-#addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
-addon = xbmcaddon.Addon(id='plugin.video.acd')
+addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
+#addon = xbmcaddon.Addon(id='plugin.video.acd')
 PLUGIN_URL = sys.argv[0]
 plugin_handle = int(sys.argv[1])
 
