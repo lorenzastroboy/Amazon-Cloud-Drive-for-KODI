@@ -174,17 +174,13 @@ class settings:
         except:
             return default
 
-    def getSettingInt(self, key, default=0):
+
+    def getSettingInt(self, key,default=0):
         try:
-            value = int(self.addon.getSetting(key))
-            if value == 'true':
-                return True
-            elif value == 'false':
-                return False
-            else:
-                return value
+            return int(self.addon.getSetting(key))
         except:
             return default
+
 
     def getSetting(self, key, default=''):
         try:

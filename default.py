@@ -116,7 +116,7 @@ xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_LABEL)
 #    xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_TRACKNUM)
 xbmcplugin.addSortMethod(int(sys.argv[1]), xbmcplugin.SORT_METHOD_SIZE)
 
-numberOfAccounts = cloudservice.numberOfAccounts(addon_parameters.PLUGIN_NAME)
+numberOfAccounts = kodi_common.numberOfAccounts(addon_parameters.PLUGIN_NAME)
 invokedUsername = settings.getParameter('username')
 
 
@@ -125,7 +125,7 @@ invokedUsername = settings.getParameter('username')
 
 if mode == 'dummy' or mode == 'delete' or mode == 'enroll':
 
-    cloudservice.accountActions(addon, addon_parameters.PLUGIN_NAME, mode, instanceName, numberOfAccounts)
+    kodi_common.accountActions(addon, addon_parameters.PLUGIN_NAME, mode, instanceName, numberOfAccounts)
 
 #create strm files
 elif mode == 'buildstrm':
@@ -191,7 +191,7 @@ elif mode == 'buildstrm':
                         if username == invokedUsername:
 
                             #let's log in
-                            if ( int(settings.getSetting(instanceName+'_type',0))==0):
+                            if ( settings.getSettingInt(instanceName+'_type',0)==0):
                                 service = cloudservice1(PLUGIN_URL,addon,instanceName, user_agent, settings)
                             else:
                                 service = cloudservice2(PLUGIN_URL,addon,instanceName, user_agent, settings)
@@ -206,13 +206,21 @@ elif mode == 'buildstrm':
                             service
                         except NameError:
                             #fallback on first defined account
-                            if ( int(settings.getSetting(instanceName+'_type',0))==0):
+                            if ( settings.getSettingInt(instanceName+'_type',0)==0):
                                 service = cloudservice1(PLUGIN_URL,addon,addon_parameters.PLUGIN_NAME+'1', user_agent, settings)
                             else:
                                 service = cloudservice2(PLUGIN_URL,addon,addon_parameters.PLUGIN_NAME+'1', user_agent, settings)
                         break
                     count = count + 1
 
+                # encfs -- extract filename
+                if encfs:
+                    extrapulatedFolderName = re.compile('([^/]+)/$')
+
+                    titleDecrypted = extrapulatedFolderName.match(dencryptedPath)
+
+                    if titleDecrypted is not None:
+                        title = titleDecrypted.group(1)
 
 
                 if addon_parameters.spreadsheet and service.cloudResume == '2':
@@ -225,6 +233,14 @@ elif mode == 'buildstrm':
             elif filename != '':
                             if encfs:
                                 values = {'title': title, 'encfs': 'True', 'epath': encryptedPath, 'dpath': dencryptedPath, 'filename': filename, 'username': invokedUsername}
+                                # encfs -- extract filename
+                                extrapulatedFileName = re.compile('.*?/([^/]+)$')
+
+                                titleDecrypted = extrapulatedFileName.match(dencryptedPath)
+
+                                if titleDecrypted is not None:
+                                    title = titleDecrypted.group(1)
+
                             else:
                                 values = {'title': title, 'filename': filename, 'username': invokedUsername}
                             if type == 1:
@@ -245,7 +261,7 @@ elif mode == 'buildstrm':
                     username = settings.getSetting(instanceName+'_username')
 
                     if username != '' and username == invokedUsername:
-                        if ( int(settings.getSetting(instanceName+'_type',0))==0):
+                        if ( settings.getSettingInt(instanceName+'_type',0)==0):
                                 service = cloudservice1(PLUGIN_URL,addon,instanceName, user_agent, settings)
                         else:
                             service = cloudservice2(PLUGIN_URL,addon,instanceName, user_agent, settings)
@@ -258,7 +274,7 @@ elif mode == 'buildstrm':
                             service
                         except NameError:
                             #fallback on first defined account
-                            if ( int(settings.getSetting(instanceName+'_type',0))==0):
+                            if ( settings.getSettingInt(instanceName+'_type',0)==0):
                                     service = cloudservice1(PLUGIN_URL,addon,addon_parameters.PLUGIN_NAME+'1', user_agent, settings)
                             else:
                                 service = cloudservice2(PLUGIN_URL,addon,addon_parameters.PLUGIN_NAME+'1', user_agent, settings)
@@ -281,6 +297,10 @@ elif mode == 'buildstrm':
 
 ###
 
+#STRM playback without instance name; use default
+if invokedUsername == '' and instanceName == '' and (mode == 'video' or mode == 'audio'):
+    instanceName = addon_parameters.PLUGIN_NAME + str(settings.getSetting('account_default', 1))
+
 
 instanceName = kodi_common.getInstanceName(addon, addon_parameters.PLUGIN_NAME, mode, instanceName, invokedUsername, numberOfAccounts, contextType)
 
@@ -289,14 +309,11 @@ if instanceName is None and (mode == 'index' or mode == 'main' or mode == 'offli
     service = None
 elif instanceName is None:
     service = cloudservice2(PLUGIN_URL,addon,'', user_agent, settings, authenticate=False)
-elif settings.getSettingInt(instanceName+'_type',0) ==0 :
+elif settings.getSettingInt(instanceName+'_type',0)==0 :
     service = cloudservice1(PLUGIN_URL,addon,instanceName, user_agent, settings)
 else:
-
-    if invokedUsername == '' and instanceName == '':
-        instanceName = addon_parameters.PLUGIN_NAME + str(settings.getSetting('account_default', 1))
-
     service = cloudservice2(PLUGIN_URL,addon,instanceName, user_agent, settings)
+
 
 #create strm files
 if mode == 'buildstrm2':
@@ -380,7 +397,7 @@ elif mode == 'cloud_db':
     package=package.package(mediaFile,mediaFolder)
 
         # TESTING
-    if addon_parameters.spreadsheet and  service.cloudResume == '2':
+    if addon_parameters.spreadsheet and service.cloudResume == '2':
         if service.worksheetID == '':
 
             try:
@@ -443,29 +460,34 @@ elif mode == 'main' or mode == 'index':
     # display option for all Videos/Music/Photos, across gdrive
     #** gdrive specific
     if mode == 'main':
-        if contentType in (2,4,7):
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=ALL&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30030)+']')
-        elif contentType == 1:
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=VIDEOMUSIC&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30031)+']')
-        elif contentType == 0:
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=VIDEO&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30025)+']')
-        elif contentType == 3:
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=MUSIC&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30094)+']')
-        elif contentType == 5:
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=PHOTO&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30034)+']')
-        elif contentType == 6:
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=PHOTOMUSIC&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30032)+']')
+        if ('gdrive' in addon_parameters.PLUGIN_NAME):
+
+            if contentType in (2,4,7):
+                kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=ALL&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30030)+']')
+            elif contentType == 1:
+                kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=VIDEOMUSIC&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30031)+']')
+            elif contentType == 0:
+                kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=VIDEO&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30025)+']')
+            elif contentType == 3:
+                kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=MUSIC&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30094)+']')
+            elif contentType == 5:
+                kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=PHOTO&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30034)+']')
+            elif contentType == 6:
+                kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=PHOTOMUSIC&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+' '+addon.getLocalizedString(30032)+']')
         folderID = 'root'
-        if (service.protocol != 2):
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=STARRED-FILES&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+ ' '+addon.getLocalizedString(30095)+']')
-            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=STARRED-FOLDERS&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+  ' '+addon.getLocalizedString(30096)+']')
-        kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=SHARED&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+  ' '+addon.getLocalizedString(30098)+']')
-        kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=STARRED-FILESFOLDERS&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+  ' '+addon.getLocalizedString(30097)+']')
+
+        if ('gdrive' in addon_parameters.PLUGIN_NAME):
+
+#        if (service.protocol != 2):
+#            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=STARRED-FILES&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+ ' '+addon.getLocalizedString(30095)+']')
+#            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=STARRED-FOLDERS&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+  ' '+addon.getLocalizedString(30096)+']')
+            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=SHARED&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+  ' '+addon.getLocalizedString(30098)+']')
+            kodi_common.addMenu(PLUGIN_URL+'?mode=index&folder=STARRED-FILESFOLDERS&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30018)+  ' '+addon.getLocalizedString(30097)+']')
         kodi_common.addMenu(PLUGIN_URL+'?mode=search&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30111)+']')
         kodi_common.addMenu(PLUGIN_URL+'?mode=buildstrm2&instance='+str(service.instanceName)+'&content_type='+str(contextType),'<Testing - manual run of change tracking build STRM>')
 
         #CLOUD_DB
-        if service.gSpreadsheet is not None:
+        if 'gdrive' in addon_parameters.PLUGIN_NAME and service.gSpreadsheet is not None:
                 kodi_common.addMenu(PLUGIN_URL+'?mode=cloud_db&action=recentstarted&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30177)+' recently started]')
                 kodi_common.addMenu(PLUGIN_URL+'?mode=cloud_db&action=recentwatched&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30177)+' recently watched]')
                 kodi_common.addMenu(PLUGIN_URL+'?mode=cloud_db&action=library&instance='+str(service.instanceName)+'&content_type='+contextType,'['+addon.getLocalizedString(30177)+' library]')
@@ -1009,11 +1031,10 @@ elif mode == 'audio' or mode == 'video' or mode == 'search' or mode == 'play' or
         encfs_source = settings.encfsSource
         encfs_target = settings.encfsTarget
         encfs_inode = settings.encfsInode
-
         mediaFile = file.file(filename, title, '', 0, '','')
         mediaFolder = folder.folder(folderID,'')
         (mediaURLs,package) = service.getPlaybackCall(package=package.package(mediaFile,mediaFolder), title=title, contentType=8)
- #        (mediaURLs,package) = service.getPlaybackCall(None,title=title)
+        #(mediaURLs,package) = service.getPlaybackCall(None,title=title)
         mediaURL = mediaURLs[0]
 
         playbackTarget = encfs_target + dencryptedPath
@@ -1077,6 +1098,8 @@ elif mode == 'audio' or mode == 'video' or mode == 'search' or mode == 'play' or
             mediaList = ['.sub', '.srt']
             media_re = re.compile("|".join(mediaList), re.I)
 
+
+            # encfs -- extract path
             extrapulatedPath = re.compile('(.*?)/[^/]+$')
 
             dencryptedPathWithoutFilename = extrapulatedPath.match(dencryptedPath)

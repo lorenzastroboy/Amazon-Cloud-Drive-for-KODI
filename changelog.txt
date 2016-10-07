@@ -1,3 +1,7 @@
+v0.2.0 (2016-10-07)
+- sync with latest cloudservices
+- support for encfs
+- implement encfs STRM generation and playback
 v0.1.10 (2016-10-04)
 - move to non-testing
 v0.1.9 (2016-10-03)
