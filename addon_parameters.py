@@ -31,3 +31,5 @@ addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
 cloudservice2 = acd_api.acd
 cloudservice1 = acd_api.acd
 
+spreadsheet = False
+

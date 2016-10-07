@@ -1,5 +1,5 @@
 '''
-    Copyright (C) 2013-2015 ddurdle
+    Copyright (C) 2013-2016 ddurdle
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -20,21 +20,38 @@
 # cloudservice - required python modules
 import sys
 import cgi
+import os
+import re
 
 # cloudservice - standard XBMC modules
 import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 
 
 from resources.lib import settings
-
+from resources.lib import offlinefile
 
 # global variables
-#addon = xbmcaddon.Addon(id='plugin.video.gdrive')
-addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
-#addon = xbmcaddon.Addon(id='plugin.video.acd')
+import addon_parameters
+addon = addon_parameters.addon
 PLUGIN_URL = sys.argv[0]
 plugin_handle = int(sys.argv[1])
 
+def decode(data):
+        return re.sub("&#(\d+)(;|(?=\s))", _callback, data).strip()
+
+def decode_dict(data):
+        for k, v in data.items():
+            if type(v) is str or type(v) is unicode:
+                data[k] = decode(v)
+        return data
+
+#http://stackoverflow.com/questions/1208916/decoding-html-entities-with-python/1208931#1208931
+def _callback(matches):
+    id = matches.group(1)
+    try:
+        return unichr(int(id))
+    except:
+        return id
 
 ##
 # load eclipse debugger
@@ -180,3 +197,228 @@ def getContentType(contextType,encfs):
       return contentType
 
 
+
+##
+#  get a list of offline files
+##
+def getOfflineFileList(cachePath):
+
+    localFiles = []
+
+
+    #workaround for this issue: https://github.com/xbmc/xbmc/pull/8531
+    if xbmcvfs.exists(cachePath) or os.path.exists(cachePath):
+        dirs,files = xbmcvfs.listdir(cachePath)
+        for dir in dirs:
+            subdir,subfiles = xbmcvfs.listdir(str(cachePath) + '/' + str(dir))
+            for file in subfiles:
+                if bool(re.search('\.stream\.mp4', file)):
+                    try:
+                        nameFile = xbmcvfs.File(str(cachePath) + '/' + str(dir) + '/' + str(dir) + '.name')
+                        filename = nameFile.read()
+                        nameFile.close()
+                    except:
+                        filename = file
+                    try:
+                        nameFile = xbmcvfs.File(str(cachePath) + '/' + str(dir) + '/' + str(os.path.splitext(file)[0]) + '.resolution')
+                        resolution = nameFile.read()
+                        nameFile.close()
+                    except:
+                        resolution = file
+                    offlineFile = offlinefile.offlinefile(filename, str(cachePath) + '/' + str(dir) +'.jpg', resolution.rstrip(), str(cachePath) + '/' + str(dir) + '/' + str(os.path.splitext(file)[0]) + '.mp4')
+                    localFiles.append(offlineFile)
+
+    return localFiles
+
+
+##
+# Add a media file to a directory listing screen
+#   parameters: package, context type, whether file is encfs, encfs:decryption path, encfs:encryption path
+##
+def addOfflineMediaFile(offlinefile):
+    listitem = xbmcgui.ListItem(offlinefile.title, iconImage=offlinefile.thumbnail,
+                            thumbnailImage=offlinefile.thumbnail)
+
+    if  offlinefile.resolution == 'original':
+        infolabels = decode_dict({ 'title' : offlinefile.title})
+    else:
+        infolabels = decode_dict({ 'title' : offlinefile.title + ' - ' + offlinefile.resolution })
+    listitem.setInfo('Video', infolabels)
+    listitem.setProperty('IsPlayable', 'true')
+
+
+    xbmcplugin.addDirectoryItem(plugin_handle, offlinefile.playbackpath, listitem,
+                            isFolder=False, totalItems=0)
+    return offlinefile.playbackpath
+
+
+
+##
+# Delete an account, enroll an account or refresh the current listings
+#   parameters: addon, plugin name, mode, instance name, user provided username, number of accounts, current context
+#   returns: selected instance name
+##
+def getInstanceName(addon, PLUGIN_NAME, mode, instanceName, invokedUsername, numberOfAccounts, contextType):
+
+    # show list of services
+    if mode == 'delete' or mode == 'dummy':
+                count = 1
+
+    elif numberOfAccounts > 1 and instanceName == '' and invokedUsername == '' and mode == 'main':
+
+            addMenu(PLUGIN_URL+'?mode=enroll&content_type='+str(contextType),'[enroll account]')
+
+            if contextType != 'image':
+                path = settings.getSetting('cache_folder')
+                if path != '' and  (xbmcvfs.exists(path) or os.path.exists(path)):
+                    addMenu(PLUGIN_URL+'?mode=offline&content_type='+str(contextType),'<offline media>')
+
+            if contextType == 'image':
+                path = settings.getSetting('photo_folder')
+                if path != '' and  (xbmcvfs.exists(path) or os.path.exists(path)):
+                    addMenu(path,'<offline photos>')
+
+            path = settings.getSetting('encfs_target')
+            if path != '' and  (xbmcvfs.exists(path) or os.path.exists(path)):
+                addMenu(path,'<offline encfs>')
+
+
+            mode = ''
+            count = 1
+            while True:
+                instanceName = PLUGIN_NAME+str(count)
+                try:
+                    username = settings.getSetting(instanceName+'_username')
+                    if username != '':
+                        addMenu(PLUGIN_URL+'?mode=main&content_type='+str(contextType)+'&instance='+str(instanceName),username, instanceName=instanceName)
+
+                except:
+                    pass
+                if count == numberOfAccounts:
+                    break
+                count = count + 1
+            return None
+
+    #        spreadshetModule = getSetting('library', False)
+    #        libraryAccount = getSetting('library_account')
+
+     #       if spreadshetModule:
+     #           addMenu(PLUGIN_URL+'?mode=kiosk&content_type='+str(contextType)+'&instance='+PLUGIN_NAME+str(libraryAccount),'[kiosk mode]')
+
+    elif instanceName == '' and invokedUsername == '' and numberOfAccounts == 1:
+
+            count = 1
+            options = []
+            accounts = []
+
+            for count in range (1, numberOfAccounts+1):
+                instanceName = PLUGIN_NAME+str(count)
+                try:
+                    username = settings.getSetting(instanceName+'_username')
+                    if username != '':
+                        options.append(username)
+                        accounts.append(instanceName)
+
+                    if username != '':
+
+                        return instanceName
+                except:
+                    return instanceName
+
+            #fallback on first defined account
+            return accounts[0]
+
+    # no accounts defined and url provided; assume public
+    elif numberOfAccounts == 0 and mode=='streamurl':
+        return None
+
+    # offline mode
+    elif mode=='offline':
+        return None
+        # no accounts defined
+    elif numberOfAccounts == 0:
+
+            #legacy account conversion
+            try:
+                username = settings.getSetting('username')
+
+                if username != '':
+                    addon.setSetting(PLUGIN_NAME+'1_username', username)
+                    addon.setSetting(PLUGIN_NAME+'1_password', settings,getSetting('password'))
+                    addon.setSetting(PLUGIN_NAME+'1_auth_writely', settings.getSetting('auth_writely'))
+                    addon.setSetting(PLUGIN_NAME+'1_auth_wise', settings.getSetting('auth_wise'))
+                    addon.setSetting('username', '')
+                    addon.setSetting('password', '')
+                    addon.setSetting('auth_writely', '')
+                    addon.setSetting('auth_wise', '')
+                else:
+                    xbmcgui.Dialog().ok(addon.getLocalizedString(30000), addon.getLocalizedString(30015))
+                    xbmcplugin.endOfDirectory(plugin_handle)
+            except :
+                xbmcgui.Dialog().ok(addon.getLocalizedString(30000), addon.getLocalizedString(30015))
+                xbmcplugin.endOfDirectory(plugin_handle)
+
+            return instanceName
+
+    # show entries of a single account (such as folder)
+    elif instanceName != '':
+
+        return instanceName
+
+
+
+    elif invokedUsername != '':
+
+            options = []
+            accounts = []
+            for count in range (1, numberOfAccounts+1):
+                instanceName = PLUGIN_NAME+str(count)
+                try:
+                    username = settings.getSetting(instanceName+'_username')
+                    if username != '':
+                        options.append(username)
+                        accounts.append(instanceName)
+
+                    if username == invokedUsername:
+                        return instanceName
+
+                except:
+                    return instanceName
+
+
+            #fallback on first defined account
+            return accounts[0]
+
+    #prompt before playback
+    else:
+
+            options = []
+            accounts = []
+
+            # url provided; provide public option
+            if mode=='streamurl':
+                options.append('*public')
+                accounts.append('public')
+
+            for count in range (1, numberOfAccounts+1):
+                instanceName = PLUGIN_NAME+str(count)
+                try:
+                    username = settings.getSetting(instanceName+'_username',10)
+                    if username != '':
+                        options.append(username)
+                        accounts.append(instanceName)
+                except:
+                    break
+
+            # url provided; provide public option
+            if mode=='streamurl':
+                options.append('public')
+                accounts.append('public')
+
+            ret = xbmcgui.Dialog().select(addon.getLocalizedString(30120), options)
+
+            #fallback on first defined account
+            if accounts[ret] == 'public':
+                return None
+            else:
+                return accounts[ret]
