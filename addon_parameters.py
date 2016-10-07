@@ -26,8 +26,7 @@ from resources.lib import acd_api
 
 # global variables
 PLUGIN_NAME = 'acd'
-#addon = xbmcaddon.Addon(id='plugin.video.gdrive')
-addon = xbmcaddon.Addon(id='plugin.video.gdrive-testing')
+addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
 
 cloudservice2 = acd_api.acd
 cloudservice1 = acd_api.acd
