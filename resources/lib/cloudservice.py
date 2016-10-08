@@ -1094,6 +1094,22 @@ class cloudservice(object):
 
                 xbmcplugin.addDirectoryItem(plugin_handle, url, listitem,
                                 isFolder=True, totalItems=0)
+
+            elif 'ENCFS' in folder.id:
+                listitem = xbmcgui.ListItem(decode('*encfs* ' + folder.displayTitle()), iconImage=decode(folder.thumb), thumbnailImage=decode(folder.thumb))
+                extrapulatedFolderName = re.compile('ENCFS (.*?)$')
+
+                resourceID = extrapulatedFolderName.match(folder.id)
+
+                if resourceID is not None:
+                    folder.id = resourceID.group(1)
+
+                values = {'instance': self.instanceName, 'title': folder.title, 'folder': folder.id}
+
+                url = self.PLUGIN_URL+'?mode=index&encfs=true&content_type='+contextType + '&' + urllib.urlencode(values)
+
+                xbmcplugin.addDirectoryItem(plugin_handle, url, listitem,
+                                isFolder=True, totalItems=0)
             else:
                 listitem = xbmcgui.ListItem(decode(folder.displayTitle()), iconImage=decode(folder.thumb), thumbnailImage=decode(folder.thumb))
 

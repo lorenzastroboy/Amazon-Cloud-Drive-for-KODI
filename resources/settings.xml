@@ -147,7 +147,7 @@
     </category>
 
 	<!-- cache properties -->
-<!--    <category label="30116">
+    <category label="30116">
         <setting id="cache_folder" type="folder" label="30090" default="" />
     	<setting id="cache_thumbnails" type="bool" subsetting="true" label="30182" default="false" />
     	<setting id="cache_srt" type="bool" subsetting="true" label="30181" default="false" />
@@ -158,7 +158,7 @@
         <setting id="chunk_size" type="slider" subsetting="true" label="30091" option="int" range="131072,8192,8388608" default="163840" />
         <setting id="cache_percent" type="slider" subsetting="true" label="30093" default="10" option="percent" range="0,1,100" />
     </category>
--->
+
 
 	<!-- encfs properties -->
     <category label="30165">

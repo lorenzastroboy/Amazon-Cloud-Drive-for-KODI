@@ -539,7 +539,7 @@ class acd(cloudservice):
                              entry, re.DOTALL):
                     title = r.group(1)
                     break
-                for r in re.finditer('\"size\"\:\"([^\"]+)\"' ,
+                for r in re.finditer('\"size\"\:([^\,]+)' ,
                              entry, re.DOTALL):
                     fileSize = r.group(1)
                     break
@@ -587,6 +587,12 @@ class acd(cloudservice):
                         newtitle = r.group(1)
                         title = '*' + newtitle
                         resourceID = 'SAVED SEARCH'
+                    for r in re.finditer('ENCFS\|([^\|]+)\|([^\|]+)' ,
+                             title, re.DOTALL):
+                        resourceID = r.group(1)
+                        title = r.group(2)
+                        resourceID = 'ENCFS ' + resourceID
+
                     media = package.package(None,folder.folder(resourceID,title, thumb=icon))
                     return media
 
@@ -1047,6 +1053,7 @@ class acd(cloudservice):
                 media = self.getMediaPackage(entry, contentType=contentType)
                 if media is not None:
                     mediaURLs.append(media.mediaurl)
+                    package = media
 
             #mediaURLs.append(mediaurl.mediaurl(url, 'original', 0, 9999))
             #validate token before proceeding
