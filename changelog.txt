@@ -5,6 +5,7 @@ v0.2.0 (2016-10-07)
 - implement - Support to view images #10
 - implement - Import Videos to Kodi Library #7
 - implement - EncFS Support #5
+- bundle changes
 v0.1.10 (2016-10-04)
 - move to non-testing
 v0.1.9 (2016-10-03)
