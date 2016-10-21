@@ -145,10 +145,10 @@ elif mode == 'buildstrm':
         addon.setSetting('strm_path', path)
 
     if path != '':
-        returnPrompt = xbmcgui.Dialog().yesno(addon.getLocalizedString(30000), addon.getLocalizedString(30027) + '\n'+path +  '?')
+        returnPrompt = xbmcgui.Dialog().yesno(addon.getLocalizedString(30000), addon.getLocalizedString(30027) + '\n'+str(path).decode('utf-8') +  '?')
 
 
-    if path != '' and returnPrompt:
+    if path != '':# and returnPrompt:
 
         if silent != 2:
             try:
