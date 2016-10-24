@@ -1681,6 +1681,21 @@ elif mode == 'audio' or mode == 'video' or mode == 'search' or mode == 'play' or
 
 xbmcplugin.endOfDirectory(plugin_handle)
 
+#from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+#from resources.lib import streamer
+#import urllib, urllib2
+
+#try:
+#    server = streamer.MyHTTPServer(('', 8011), streamer.myStreamer)
+#    while server.ready:
+#        xbmc.sleep(1000)
+
+#except: pass
+#    req = urllib2.Request('http://localhost:8005/kill', None, None)
+#    try:
+#        response = urllib2.urlopen(req)
+#    except: pass
+#    server = streamer.MyHTTPServer(('', 8006), streamer.myStreamer)
 
 #automation - create strm files
 if service is not None:

@@ -30,6 +30,7 @@ class MyHTTPServer(HTTPServer):
 
     def __init__(self, *args, **kw):
         HTTPServer.__init__(self, *args, **kw)
+        self.ready = True
 
     def setFile(self, playbackURL, chunksize, playbackFile, response, fileSize, url, service):
         self.playbackURL = playbackURL
@@ -49,6 +50,32 @@ class myStreamer(BaseHTTPRequestHandler):
 
     #Handler for the GET requests
     def do_GET(self):
+
+        if self.path == '/kill':
+            self.server.ready = False
+            return
+
+        if (0):
+            req = urllib2.Request(self.server.url, None, None)
+            try:
+                response = urllib2.urlopen(req)
+            except urllib2.URLError, e:
+                #self.server.service.refreshToken()
+                req = urllib2.Request(self.server.url, None, None)
+                try:
+                    response = urllib2.urlopen(req)
+                except urllib2.URLError, e:
+                    print "error " + str(e.code)
+                    return
+
+
+            self.end_headers()
+
+            self.wfile.write(response.read())
+        return
+
+    #Handler for the GET requests
+    def do_GET2(self):
 
         if self.path == '/kill':
             self.server.ready = False
