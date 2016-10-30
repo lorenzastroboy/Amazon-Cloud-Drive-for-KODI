@@ -1,3 +1,4 @@
+- reduce timeout in photo streamer
 v0.2.6 (2016-10-29)
 - implement: Thumbnail preview for pictures #16
 v0.2.5 (2016-10-22)
