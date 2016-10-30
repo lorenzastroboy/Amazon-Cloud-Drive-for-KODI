@@ -1,3 +1,5 @@
+v0.2.6 (2016-10-29)
+- implement: Thumbnail preview for pictures #16
 v0.2.5 (2016-10-22)
 - encfs remote/other, change ctime to mtime (better compatibility)
 v0.2.4 (2016-10-21)

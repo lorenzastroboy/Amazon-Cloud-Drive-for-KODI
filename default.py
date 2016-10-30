@@ -1681,16 +1681,18 @@ elif mode == 'audio' or mode == 'video' or mode == 'search' or mode == 'play' or
 
 xbmcplugin.endOfDirectory(plugin_handle)
 
-#from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
-#from resources.lib import streamer
-#import urllib, urllib2
+from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
+from resources.lib import streamer
+import urllib, urllib2
 
-#try:
-#    server = streamer.MyHTTPServer(('', 8011), streamer.myStreamer)
-#    while server.ready:
-#        xbmc.sleep(1000)
-
-#except: pass
+try:
+    server = streamer.MyHTTPServer(('', 8011), streamer.myStreamer)
+    server.setDomain(service, service.contentURL)
+    while server.ready:
+        server.handle_request()
+        xbmc.sleep(1000)
+    server.socket.close()
+except: pass
 #    req = urllib2.Request('http://localhost:8005/kill', None, None)
 #    try:
 #        response = urllib2.urlopen(req)
