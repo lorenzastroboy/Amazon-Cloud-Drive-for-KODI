@@ -559,7 +559,6 @@ class acd(cloudservice):
                     break
 
                 url = self.contentURL +'nodes/' + str(resourceID) + '/content'
-                thumbnail = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox=200' #+ '|' + self.getHeadersEncoded()
 
                 #for r in re.finditer('\"downloadUrl\"\:\"([^\"]+)\"' ,
                 #             entry, re.DOTALL):
@@ -671,9 +670,14 @@ class acd(cloudservice):
 
                 # entry is a photo
                 elif ((resourceType == 'application/vnd.google-apps.photo' or 'image' in resourceType) and contentType in (2,4,5,6,7)):
+                    thumbnail = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox='+ str(self.settings.thumbnailResolution) #+ '|' + self.getHeadersEncoded()
+
                     mediaFile = file.file(resourceID, title, title, self.MEDIA_TYPE_PICTURE, '', thumbnail, size=fileSize)
 
-                    photoURL = url  +  '?viewBox='+ str(self.settings.photoResolution)
+                    if self.settings.photoResolution < 9999:
+                        photoURL = url  +  '?viewBox='+ str(self.settings.photoResolution)
+                    else:
+                        photoURL = url
 
                     media = package.package(mediaFile,folder.folder(folderName,''))
                     media.setMediaURL(mediaurl.mediaurl(photoURL, '','',''))
