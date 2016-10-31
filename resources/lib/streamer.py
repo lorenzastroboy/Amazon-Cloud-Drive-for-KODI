@@ -44,7 +44,30 @@ class myStreamer(BaseHTTPRequestHandler):
 
     #Handler for the POST requests
     def do_HEAD(self):
+        url =  str(self.server.domain) + str(self.path)
+        print url
+        req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
+        req.get_method = lambda : 'HEAD'
+        try:
+            response = urllib2.urlopen(req)
+        except urllib2.URLError, e:
+            if e.code == 403 or e.code == 401:
+                print "ERROR\n"
+                self.server.service.refreshToken()
+                req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
+                req.get_method = lambda : 'HEAD'
+                try:
+                    response = urllib2.urlopen(req)
+                except:
+                    return
+            else:
+                return
+        self.send_response(200)
+        self.send_header('Content-Type',response.info().getheader('Content-Type'))
+        self.send_header('Content-Length',response.info().getheader('Content-Length'))
+        self.end_headers()
 
+        response.close()
         return
 
     #Handler for the POST requests
@@ -56,7 +79,6 @@ class myStreamer(BaseHTTPRequestHandler):
         else:
             url =  str(self.server.domain) + str(self.path)
             print url
-
             req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
             try:
                 response = urllib2.urlopen(req)
@@ -71,6 +93,11 @@ class myStreamer(BaseHTTPRequestHandler):
                         return
                 else:
                     return
+
+            self.send_response(200)
+            self.send_header('Content-Type',response.info().getheader('Content-Type'))
+            self.send_header('Content-Length',response.info().getheader('Content-Length'))
+            self.end_headers()
 
             self.wfile.write(response.read())
 

@@ -1,5 +1,7 @@
+v0.2.7 (2016-10-30)
 - reduce timeout in photo streamer
 - use none templink in photo streamer
+- implement HEAD and header return in GET in photo streamer
 v0.2.6 (2016-10-29)
 - implement: Thumbnail preview for pictures #16
 v0.2.5 (2016-10-22)
