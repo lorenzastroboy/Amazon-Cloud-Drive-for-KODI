@@ -57,11 +57,20 @@ class myStreamer(BaseHTTPRequestHandler):
             url =  str(self.server.domain) + str(self.path)
             print url
 
-            req = urllib2.Request(url)
+            req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
             try:
                 response = urllib2.urlopen(req)
             except urllib2.URLError, e:
-                return
+                if e.code == 403 or e.code == 401:
+                    print "ERROR\n"
+                    self.server.service.refreshToken()
+                    req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
+                    try:
+                        response = urllib2.urlopen(req)
+                    except:
+                        return
+                else:
+                    return
 
             self.wfile.write(response.read())
 

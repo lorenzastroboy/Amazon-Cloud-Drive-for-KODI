@@ -386,8 +386,8 @@ class acd(cloudservice):
         elif shareID != False:
             url = self.API_URL  +'/shares/' + shareID + '?resourceVersion=V2&ContentType=JSON&asset=ALL'
 
-        elif folderName != False:
-            url = url + '?tempLink=true'
+#        elif folderName != False:
+#            url = url + '?tempLink=true'
 
         baseURL = url
         mediaFiles = []
@@ -557,10 +557,6 @@ class acd(cloudservice):
                              entry, re.DOTALL):
                     fileSize = r.group(1)
                     break
-                for r in re.finditer('\"thumbnailLink\"\:\"([^\"]+)\"' ,
-                             entry, re.DOTALL):
-                    thumbnail = r.group(1)
-                    break
 
                 url = self.contentURL +'nodes/' + str(resourceID) + '/content'
                 thumbnail = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox=200' #+ '|' + self.getHeadersEncoded()
@@ -574,8 +570,8 @@ class acd(cloudservice):
                     url = r.group(1)
                 #    thumbnail = url  + '?viewBox=200'
 
-                    thumbnail = 'http://localhost:8011/'  + url +  '?viewBox=200' #+ '|' + self.getHeadersEncoded()
-                    thumbnail = re.sub(self.contentURL, '', thumbnail)
+#                    thumbnail = 'http://localhost:8011/'  + url +  '?viewBox=200' #+ '|' + self.getHeadersEncoded()
+ #                   thumbnail = re.sub(self.contentURL, '', thumbnail)
 
                     break
                 for r in re.finditer('\"extension\"\:\"([^\"]+)\"' ,
