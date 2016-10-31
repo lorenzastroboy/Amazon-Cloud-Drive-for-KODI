@@ -1,3 +1,4 @@
+- enable resized photo display
 v0.2.7 (2016-10-30)
 - reduce timeout in photo streamer
 - use none templink in photo streamer
