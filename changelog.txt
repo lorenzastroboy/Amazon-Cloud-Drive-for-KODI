@@ -1,5 +1,7 @@
+v0.2.8 (2016-10-31)
 - pictures feature - enable resized photo display
 - pictures feature - add setting for different size thumbnails
+- impelement: Implementing scaling resolutions for photos #23
 v0.2.7 (2016-10-30)
 - reduce timeout in photo streamer
 - use none templink in photo streamer
