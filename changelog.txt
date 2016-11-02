@@ -1,3 +1,5 @@
+v0.2.9 (2016-11-02)
+- pictures feature - workaround for photos and thumbnails
 v0.2.8 (2016-10-31)
 - pictures feature - enable resized photo display
 - pictures feature - add setting for different size thumbnails

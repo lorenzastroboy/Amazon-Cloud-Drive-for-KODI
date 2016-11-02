@@ -44,10 +44,14 @@ class myStreamer(BaseHTTPRequestHandler):
 
     #Handler for the POST requests
     def do_HEAD(self):
+
+        self.send_response(200)
+        self.send_header('Content-Type','image/jpeg')
+        return
         url =  str(self.server.domain) + str(self.path)
-        print url
+        print 'HEAD ' + url + "\n"
         req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
-        req.get_method = lambda : 'HEAD'
+       # req.get_method = lambda : 'HEAD'
         try:
             response = urllib2.urlopen(req)
         except urllib2.URLError, e:
@@ -55,7 +59,7 @@ class myStreamer(BaseHTTPRequestHandler):
                 print "ERROR\n"
                 self.server.service.refreshToken()
                 req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
-                req.get_method = lambda : 'HEAD'
+               # req.get_method = lambda : 'HEAD'
                 try:
                     response = urllib2.urlopen(req)
                 except:
@@ -63,8 +67,15 @@ class myStreamer(BaseHTTPRequestHandler):
             else:
                 return
         self.send_response(200)
+        print 'header' + str(response.info()) + "\n"
         self.send_header('Content-Type',response.info().getheader('Content-Type'))
-        self.send_header('Content-Length',response.info().getheader('Content-Length'))
+        #self.send_header('Content-Length',response.info().getheader('Content-Length'))
+        #self.send_header('Content-Length',response.info().getheader('Content-Length'))
+        self.send_header('Cache-Control',response.info().getheader('Cache-Control'))
+        self.send_header('Date',response.info().getheader('Date'))
+        #self.send_header('ETag',response.info().getheader('ETag'))
+        #self.send_header('Server',response.info().getheader('Server'))
+
         self.end_headers()
 
         response.close()
@@ -78,7 +89,7 @@ class myStreamer(BaseHTTPRequestHandler):
 
         else:
             url =  str(self.server.domain) + str(self.path)
-            print url
+            print 'GET ' + url + "\n"
             req = urllib2.Request(url,  None,  self.server.service.getHeadersList())
             try:
                 response = urllib2.urlopen(req)
@@ -95,15 +106,20 @@ class myStreamer(BaseHTTPRequestHandler):
                     return
 
             self.send_response(200)
+            #print str(response.info()) + "\n"
             self.send_header('Content-Type',response.info().getheader('Content-Type'))
             self.send_header('Content-Length',response.info().getheader('Content-Length'))
+            self.send_header('Cache-Control',response.info().getheader('Cache-Control'))
+            self.send_header('Date',response.info().getheader('Date'))
+            #self.send_header('ETag',response.info().getheader('ETag'))
+            #self.send_header('Server',response.info().getheader('Server'))
             self.end_headers()
 
             self.wfile.write(response.read())
 
             #response_data = response.read()
             response.close()
-
+            print "DONE"
             #        for r in re.finditer('redirect\=(.*)' ,
             #                     post_body, re.DOTALL):
             #          redirect = r.group(1)
@@ -111,3 +127,6 @@ class myStreamer(BaseHTTPRequestHandler):
             #          print "\n\n" + redirect
             #          break
             return
+
+    def log_message(self, format, *args):
+        return

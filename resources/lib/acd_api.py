@@ -675,9 +675,11 @@ class acd(cloudservice):
                     mediaFile = file.file(resourceID, title, title, self.MEDIA_TYPE_PICTURE, '', thumbnail, size=fileSize)
 
                     if self.settings.photoResolution < 9999:
-                        photoURL = url  +  '?viewBox='+ str(self.settings.photoResolution)
+                        #photoURL = url  +  '?viewBox='+ str(self.settings.photoResolution)
+                        photoURL = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox='+ str(self.settings.photoResolution) #+ '|' + self.getHeadersEncoded()
                     else:
-                        photoURL = url
+                        #photoURL = url
+                        photoURL = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content'
 
                     media = package.package(mediaFile,folder.folder(folderName,''))
                     media.setMediaURL(mediaurl.mediaurl(photoURL, '','',''))
