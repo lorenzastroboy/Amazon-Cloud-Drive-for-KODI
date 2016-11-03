@@ -617,6 +617,8 @@ class acd(cloudservice):
 
                 # entry is a video
                 elif ((fileExtension == '' or fileExtension.lower() not in ('sub')) and (resourceType == 'application/vnd.google-apps.video' or 'video' in resourceType or resourceType in ('application/x-matroska') or fileExtension.lower() in ('mkv', 'm2ts', 'ts', 'iso')) and contentType in (0,1,2,4,7)):
+                    thumbnail = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox='+ str(self.settings.thumbnailResolution) #+ '|' + self.getHeadersEncoded()
+
                     mediaFile = file.file(resourceID, title, title, self.MEDIA_TYPE_VIDEO, fanart, thumbnail, size=fileSize, resolution=[height,width], playcount=int(0), duration=duration)
 
                     if self.settings.parseTV:
