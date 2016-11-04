@@ -129,6 +129,9 @@ class settings:
         else:
             self.thumbnailResolution = 220
 
+        self.streamer =  self.getSetting('streamer', True)
+        self.streamPort =  int(self.getSetting('stream_port', 8011))
+
         self.encfsDownloadType = int(self.getSetting('encfs_download_type', 1))
 
 
