@@ -31,7 +31,7 @@ from resources.lib import mediaurl
 #from resources.lib import kodi_common
 #from resources.lib import settings
 from resources.lib import streamer
-
+from resources.lib.RedirectHandler import RedirectHandler
 
 
 
@@ -501,7 +501,7 @@ class cloudservice(object):
 
 
         if (not xbmcvfs.exists(playbackFile)  or  xbmcvfs.File(playbackFile).size() == 0 or xbmcvfs.File(playbackFile).size() < package.file.size) or force:
-
+            
             #seek to end of file for append
             # - must use python for append (xbmcvfs not supported)
             # - if path is not local or KODI-specific user must restart complete download
@@ -525,15 +525,16 @@ class cloudservice(object):
             progress = xbmcgui.DialogProgressBG()
             progressBar = fileSize
             progress.create(self.addon.getLocalizedString(30035), package.file.title)
+            redirectOpener = urllib2.build_opener(RedirectHandler())
             # if action fails, validate login
             try:
-              response = urllib2.urlopen(req)
+              response = redirectOpener.open(req)
 
             except urllib2.URLError, e:
               self.refreshToken()
               req = urllib2.Request(mediaURL.url, None, self.getHeadersList())
               try:
-                  response = urllib2.urlopen(req)
+                  response = redirectOpener.open(req)
 
               except urllib2.URLError, e:
                 xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
@@ -633,7 +634,9 @@ class cloudservice(object):
 
 
             downloadedBytes = 0
-
+            
+            redirectOpener = urllib2.build_opener(RedirectHandler())
+            
             #seek to end of file for append
             # - must use python for append (xbmcvfs not supported)
             # - if path is not local or KODI-specific user must restart complete download
@@ -645,13 +648,13 @@ class cloudservice(object):
 
                 # if action fails, validate login
                 try:
-                  response = urllib2.urlopen(req)
+                  response = redirectOpener.open(req)
 
                 except urllib2.URLError, e:
                   self.refreshToken()
                   req = urllib2.Request(mediaURL.url, None, self.getHeadersList(additionalHeaders={'Range': 'bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)}))
                   try:
-                      response = urllib2.urlopen(req)
+                      response = redirectOpener.open(req)
 
                   except urllib2.URLError, e:
                     xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
@@ -666,13 +669,13 @@ class cloudservice(object):
 
                 # if action fails, validate login
                 try:
-                  response = urllib2.urlopen(req)
+                  response = redirectOpener.open(req)
 
                 except urllib2.URLError, e:
                   self.refreshToken()
                   req = urllib2.Request(mediaURL.url, None, self.getHeadersList())
                   try:
-                      response = urllib2.urlopen(req)
+                      response = redirectOpener.open(req)
 
                   except urllib2.URLError, e:
                     xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
@@ -793,7 +796,7 @@ class cloudservice(object):
         #seek to end of file for append
         # - must use python for append (xbmcvfs not supported)
         # - if path is not local or KODI-specific user must restart complete download
-
+        redirectOpener = urllib2.build_opener(RedirectHandler())
         req = urllib2.Request(mediaURL.url, None, self.getHeadersList())
 
         if (1):
@@ -803,13 +806,13 @@ class cloudservice(object):
 
         # if action fails, validate login
         try:
-          response = urllib2.urlopen(req)
+          response = redirectOpener.open(req)
 
         except urllib2.URLError, e:
           self.refreshToken()
           req = urllib2.Request(mediaURL.url, None, self.getHeadersList())
           try:
-              response = urllib2.urlopen(req)
+              response = redirectOpener.open(req)
 
           except urllib2.URLError, e:
             xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
@@ -854,7 +857,7 @@ class cloudservice(object):
                 except:
                     req = urllib2.Request('http://localhost:8005/kill', None, None)
                     try:
-                        response = urllib2.urlopen(req)
+                        response = redirectOpener.open(req)
                     except: pass
                     server = streamer.MyHTTPServer(('', 8006), streamer.myStreamer)
 
@@ -911,7 +914,7 @@ class cloudservice(object):
     # parameters: url of picture, file location with path on disk
     ##
     def downloadGeneralFile(self, url, file, force=False):
-
+        redirectOpener = urllib2.build_opener(RedirectHandler())
         req = urllib2.Request(url, None, self.getHeadersList())
 
         # already downloaded
@@ -922,14 +925,14 @@ class cloudservice(object):
 
         # if action fails, validate login
         try:
-            f.write(urllib2.urlopen(req).read())
+            f.write(redirectOpener.open(req).read())
             f.close()
 
         except urllib2.URLError, e:
                 self.refreshToken()
                 req = urllib2.Request(url, None, self.getHeadersList())
                 try:
-                  f.write(urllib2.urlopen(req).read())
+                  f.write(redirectOpener.open(req).read())
                   f.close()
                 except urllib2.URLError, e:
                   xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
@@ -1009,7 +1012,7 @@ class cloudservice(object):
 
 
         if (not xbmcvfs.exists(playbackFile) or xbmcvfs.File(playbackFile).size() == 0) or force:
-
+            redirectOpener = urllib2.build_opener(RedirectHandler())
             req = urllib2.Request(mediaURL.url, None, self.getHeadersList())
 
             f = xbmcvfs.File(playbackFile, 'w')
@@ -1026,13 +1029,13 @@ class cloudservice(object):
 
             # if action fails, validate login
             try:
-              response = urllib2.urlopen(req)
+              response = redirectOpener.open(req)
 
             except urllib2.URLError, e:
               self.refreshToken()
               req = urllib2.Request(mediaURL.url, None, self.getHeadersList())
               try:
-                  response = urllib2.urlopen(req)
+                  response = redirectOpener.open(req)
 
               except urllib2.URLError, e:
                 xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
