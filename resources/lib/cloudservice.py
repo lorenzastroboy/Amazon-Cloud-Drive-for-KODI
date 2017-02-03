@@ -90,8 +90,10 @@ class cloudservice(object):
     # return the appropriate "headers" for requests that include 1) user agent, 2) any authorization cookies/tokens
     #   returns: list containing the header
     ##
-    def getHeadersList(self):
-        return { 'User-Agent' : self.user_agent }
+    def getHeadersList(self, additionalHeaders={}):
+        headers = { 'User-Agent' : self.user_agent }
+        headers |= additionalHeaders
+        return headers
 
     ##
     # return the appropriate "headers" for requests that include 1) user agent, 2) any authorization cookies/tokens
@@ -504,7 +506,7 @@ class cloudservice(object):
             # - must use python for append (xbmcvfs not supported)
             # - if path is not local or KODI-specific user must restart complete download
             if  os.path.exists(playbackFile) and xbmcvfs.File(playbackFile).size() < package.file.size and  xbmcvfs.File(playbackFile).size() != 0 and not force:
-                req = urllib2.Request(mediaURL.url, None, self.getHeadersList(additionalHeader='Range', additionalValue='bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)))
+                req = urllib2.Request(mediaURL.url, None, self.getHeadersList({'Range': 'bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)}))
 
                 f = open(playbackFile, 'a')
 
@@ -636,7 +638,7 @@ class cloudservice(object):
             # - must use python for append (xbmcvfs not supported)
             # - if path is not local or KODI-specific user must restart complete download
             if  os.path.exists(playbackFile) and long(xbmcvfs.File(playbackFile).size()) < long(package.file.size) and  long(xbmcvfs.File(playbackFile).size()) != 0 and not force:
-                req = urllib2.Request(mediaURL.url, None, self.getHeadersList(additionalHeader='Range', additionalValue='bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)))
+                req = urllib2.Request(mediaURL.url, None, self.getHeadersList({'Range': 'bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)}))
 
                 f = open(playbackFile, 'a')
 
@@ -647,7 +649,7 @@ class cloudservice(object):
 
                 except urllib2.URLError, e:
                   self.refreshToken()
-                  req = urllib2.Request(mediaURL.url, None, self.getHeadersList(additionalHeader='Range', additionalValue='bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)))
+                  req = urllib2.Request(mediaURL.url, None, self.getHeadersList({'Range': 'bytes='+str(xbmcvfs.File(playbackFile).size())+'-'+str(package.file.size)}))
                   try:
                       response = urllib2.urlopen(req)
 
