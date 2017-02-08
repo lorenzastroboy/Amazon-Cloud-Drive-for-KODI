@@ -249,13 +249,13 @@ class cloudservice(object):
                     if contentType < 9 or media_re.search(str(dir)):
                         #service.addMediaFile(fileListINodes[index], contextType=contextType, encfs=True,  dpath=str(dencryptedPath) + str(dir), epath=str(encryptedPath) )
                         #'content_type': 'video',
-                        values = { 'username': self.authorization.username, 'encfs':'True', 'dpath': str(dencryptedPath) + str(dir), 'epath': str(encryptedPath), 'title': item.file.title, 'filename': item.file.id}
+                        values = { 'username': self.authorization.username, 'encfs':'True', 'dpath': str(dencryptedPath) + str(dir), 'epath': str(encryptedPath), 'title': fileListINodes[index].file.title, 'filename': fileListINodes[index].file.id}
                         if item.file.type == 1:
                             url = self.PLUGIN_URL+ '?mode=audio&' + urllib.urlencode(values)
                         else:
                             url = self.PLUGIN_URL+ '?mode=video&' + urllib.urlencode(values)
 
-                        #url = self.PLUGIN_URL+'?mode=video&title='+str(item.file.title)+'&filename='+str(item.file.id)+ '&username='+str(self.authorization.username)
+                        #url = self.PLUGIN_URL+'?mode=video&title='+str(fileListINodes[index].file.title)+'&filename='+str(fileListINodes[index].file.id)+ '&username='+str(self.authorization.username)
 
 
                     if url != 0:
@@ -284,13 +284,13 @@ class cloudservice(object):
                     if contentType < 9 or media_re.search(str(file)):
                         #service.addMediaFile(fileListINodes[index], contextType=contextType, encfs=True,  dpath=str(dencryptedPath) + str(file), epath=str(encryptedPath) )
                         #'content_type': 'video',
-                        values = { 'username': self.authorization.username, 'encfs':'True', 'dpath': str(dencryptedPath) + str(dir), 'epath': str(encryptedPath), 'title': item.file.title, 'filename': item.file.id}
+                        values = { 'username': self.authorization.username, 'encfs':'True', 'dpath': str(dencryptedPath) + str(dir), 'epath': str(encryptedPath), 'title': fileListINodes[index].file.title, 'filename': fileListINodes[index].file.id}
                         if item.file.type == 1:
                             url = self.PLUGIN_URL+ '?mode=audio&' + urllib.urlencode(values)
                         else:
                             url = self.PLUGIN_URL+ '?mode=video&' + urllib.urlencode(values)
 
-                        #url = self.PLUGIN_URL+'?mode=video&title='+str(item.file.title)+'&filename='+str(item.file.id)+ '&username='+str(self.authorization.username)
+                        #url = self.PLUGIN_URL+'?mode=video&title='+str(fileListINodes[index].file.title)+'&filename='+str(fileListINodes[index].file.id)+ '&username='+str(self.authorization.username)
 
 
                     if url != 0:
