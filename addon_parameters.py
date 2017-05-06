@@ -1,5 +1,6 @@
 '''
-    Copyright (C) 2014-2016 ddurdle
+    gdrive (Google Drive ) for KODI / XBMC Plugin
+    Copyright (C) 2013-2016 ddurdle
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,31 +18,19 @@
 
 '''
 
-#
-#
-#
-class mediaurl:
-    # CloudService v0.2.4
+# cloudservice - standard XBMC modules
+import xbmc, xbmcgui, xbmcplugin, xbmcaddon, xbmcvfs
 
-    ##
-    ##
-    def __init__(self, url, qualityDesc, quality, order, title=''):
-        self.url = url
-        self.qualityDesc = qualityDesc
-        self.quality = quality
-        self.order = order
-        self.title = title
-        self.offline = False
+#from resources.lib import gdrive
+from resources.lib import acd_api
 
+# global variables
+PLUGIN_NAME = 'acd'
+#addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
+addon = xbmcaddon.Addon(id='plugin.video.acd')
 
-    def __repr__(self):
-        return '{}: {} {}'.format(self.__class__.__name__,
-                                  self.order)
+cloudservice2 = acd_api.acd
+cloudservice1 = acd_api.acd
 
-    def __cmp__(self, other):
-        if hasattr(other, 'order'):
-            return self.order.__cmp__(other.order)
-
-    def getKey(self):
-        return self.order
+spreadsheet = False
 

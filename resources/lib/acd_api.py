@@ -82,7 +82,7 @@ class acd(cloudservice):
         self.gSpreadsheet = gSpreadsheet
 
         if authenticate == True:
-            self.type = int(addon.getSetting(instanceName+'_type'))
+            self.type = settings.getSettingInt(instanceName+'_type',0)
 
 
         # acd specific ***
@@ -105,7 +105,7 @@ class acd(cloudservice):
 
         # load the OAUTH2 tokens or force fetch if not set
         if (authenticate == True and (not self.authorization.loadToken(self.instanceName,addon, 'auth_access_token') or not self.authorization.loadToken(self.instanceName,addon, 'auth_refresh_token'))):
-            if self.type ==1 or self.addon.getSetting(self.instanceName+'_code'):
+            if self.type ==1 or self.type == 4 or self.addon.getSetting(self.instanceName+'_code'):
                 self.getToken(self.addon.getSetting(self.instanceName+'_code'))
             else:
                 xbmcgui.Dialog().ok(self.addon.getLocalizedString(30000), self.addon.getLocalizedString(30017), self.addon.getLocalizedString(30018))
@@ -325,15 +325,17 @@ class acd(cloudservice):
     # return the appropriate "headers" for Amazon Cloud Drive requests that include 1) user agent, 2) authorization token
     #   returns: list containing the header
     ##
-    def getHeadersList(self, isPOST=False):
+    def getHeadersList(self, isPOST=False, additionalHeaders={}):
         if self.authorization.isToken(self.instanceName,self.addon, 'auth_access_token') and not isPOST:
 #            return { 'User-Agent' : self.user_agent, 'Authorization' : 'Bearer ' + self.authorization.getToken('auth_access_token') }
-            return { 'Authorization' : 'Bearer ' + self.authorization.getToken('auth_access_token') }
+            headers = { 'Authorization' : 'Bearer ' + self.authorization.getToken('auth_access_token') }
         elif self.authorization.isToken(self.instanceName,self.addon, 'auth_access_token'):
 #            return { 'User-Agent' : self.user_agent, 'Authorization' : 'Bearer ' + self.authorization.getToken('auth_access_token') }
-            return { "If-Match" : '*', 'Content-Type': 'application/atom+xml', 'Authorization' : 'Bearer ' + self.authorization.getToken('auth_access_token') }
+            headers = { "If-Match" : '*', 'Content-Type': 'application/atom+xml', 'Authorization' : 'Bearer ' + self.authorization.getToken('auth_access_token') }
         else:
-            return { 'User-Agent' : self.user_agent}
+            headers = { 'User-Agent' : self.user_agent}
+        headers.update(additionalHeaders)
+        return headers
 
 
     #*** not used
@@ -355,10 +357,10 @@ class acd(cloudservice):
     #   parameters: prompt for video quality (optional), cache type (optional)
     #   returns: list of videos
     ##
-    def getMediaList(self, folderName=False, title=False, contentType=7):
+    def getMediaList(self, folderName=False, title=False, contentType=7, shareID=False):
 
         # retrieve all items
-        url = self.metaURL +'nodes'
+        url = self.metaURL + 'nodes'
 
         # default / show root folder
         # search for title
@@ -374,6 +376,20 @@ class acd(cloudservice):
         # retrieve folder items
         else:
             url = url +'/'+ str(folderName) + '/children'
+
+#        if shareID != False:
+#            url = url + '?shareId=' + shareID
+
+
+        if folderName != False and shareID != False:
+        #    url = self.API_URL +  '/nodes/' + folderName + '/children?resourceVersion=V2&ContentType=JSON&limit=5&sort=%5B%22kind+DESC%22%2C+%22modifiedDate+DESC%22%5D&asset=ALL&tempLink=true&shareId=' + shareID
+            url = url + '?shareId=' + shareID
+
+        elif shareID != False:
+            url = self.API_URL  +'/shares/' + shareID + '?resourceVersion=V2&ContentType=JSON&asset=ALL'
+
+#        elif folderName != False:
+#            url = url + '?tempLink=true'
 
         baseURL = url
         mediaFiles = []
@@ -436,13 +452,13 @@ class acd(cloudservice):
     #   parameters: prompt for video quality (optional), cache type (optional)
     #   returns: list of videos
     ##
-    def getSharedMediaList(self, sharedID, folderID=False, contentType=7):
+    def getSharedMediaList(self, shareID, folderID=False, contentType=7):
 
 
         if folderID != False:
-            url = self.API_URL + '/' + folderID + '/children?resourceVersion=V2&ContentType=JSON&limit=5&sort=%5B%22kind+DESC%22%2C+%22modifiedDate+DESC%22%5D&asset=ALL&tempLink=true&shareId=' + sharedID
+            url = self.API_URL + 'nodes/' + folderID + '/children?resourceVersion=V2&ContentType=JSON&limit=5&sort=%5B%22kind+DESC%22%2C+%22modifiedDate+DESC%22%5D&asset=ALL&tempLink=true&shareId=' + shareID
         else:
-            url = self.API_URL +'shares/' + sharedID + '?resourceVersion=V2&ContentType=JSON&asset=ALL'
+            url = self.API_URL +'shares/' + shareID + '?resourceVersion=V2&ContentType=JSON&asset=ALL'
 
         baseURL = url
         mediaFiles = []
@@ -461,11 +477,11 @@ class acd(cloudservice):
                     except urllib2.URLError, e:
                         xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
                         self.crashreport.sendError('getSharedMediaList',str(e))
-                        return
+                        return mediaFiles
                 else:
                     xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
                     self.crashreport.sendError('getSharedMediaList',str(e))
-                    return
+                    return mediaFiles
 
             response_data = response.read()
             response.close()
@@ -539,16 +555,12 @@ class acd(cloudservice):
                              entry, re.DOTALL):
                     title = r.group(1)
                     break
-                for r in re.finditer('\"size\"\:\"([^\"]+)\"' ,
+                for r in re.finditer('\"size\"\:([^\,]+)' ,
                              entry, re.DOTALL):
                     fileSize = r.group(1)
                     break
-                for r in re.finditer('\"thumbnailLink\"\:\"([^\"]+)\"' ,
-                             entry, re.DOTALL):
-                    thumbnail = r.group(1)
-                    break
 
-                url = self.contentURL +'nodes/' + resourceID + '/content'
+                url = self.contentURL +'nodes/' + str(resourceID) + '/content'
 
                 #for r in re.finditer('\"downloadUrl\"\:\"([^\"]+)\"' ,
                 #             entry, re.DOTALL):
@@ -557,6 +569,11 @@ class acd(cloudservice):
                 for r in re.finditer('\"tempLink\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
                     url = r.group(1)
+                #    thumbnail = url  + '?viewBox=200'
+
+#                    thumbnail = 'http://localhost:8011/'  + url +  '?viewBox=200' #+ '|' + self.getHeadersEncoded()
+ #                   thumbnail = re.sub(self.contentURL, '', thumbnail)
+
                     break
                 for r in re.finditer('\"extension\"\:\"([^\"]+)\"' ,
                              entry, re.DOTALL):
@@ -587,11 +604,23 @@ class acd(cloudservice):
                         newtitle = r.group(1)
                         title = '*' + newtitle
                         resourceID = 'SAVED SEARCH'
+                    for r in re.finditer('ENCFS\|([^\|]+)\|([^\|]+)' ,
+                             title, re.DOTALL):
+                        resourceID = r.group(1)
+                        title = r.group(2)
+                        resourceID = 'ENCFS ' + resourceID
+                    for r in re.finditer('SHARE\|([^\|]+)\|([^\|]+)' ,
+                             title, re.DOTALL):
+                        resourceID = r.group(1)
+                        title = r.group(2)
+                        resourceID = 'SHARE ' + resourceID
                     media = package.package(None,folder.folder(resourceID,title, thumb=icon))
                     return media
 
                 # entry is a video
                 elif ((fileExtension == '' or fileExtension.lower() not in ('sub')) and (resourceType == 'application/vnd.google-apps.video' or 'video' in resourceType or resourceType in ('application/x-matroska') or fileExtension.lower() in ('mkv', 'm2ts', 'ts', 'iso')) and contentType in (0,1,2,4,7)):
+                    thumbnail = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox='+ str(self.settings.thumbnailResolution) #+ '|' + self.getHeadersEncoded()
+
                     mediaFile = file.file(resourceID, title, title, self.MEDIA_TYPE_VIDEO, fanart, thumbnail, size=fileSize, resolution=[height,width], playcount=int(0), duration=duration)
 
                     if self.settings.parseTV:
@@ -645,10 +674,19 @@ class acd(cloudservice):
 
                 # entry is a photo
                 elif ((resourceType == 'application/vnd.google-apps.photo' or 'image' in resourceType) and contentType in (2,4,5,6,7)):
+                    thumbnail = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox='+ str(self.settings.thumbnailResolution) #+ '|' + self.getHeadersEncoded()
+
                     mediaFile = file.file(resourceID, title, title, self.MEDIA_TYPE_PICTURE, '', thumbnail, size=fileSize)
 
+                    if self.settings.photoResolution < 9999:
+                        #photoURL = url  +  '?viewBox='+ str(self.settings.photoResolution)
+                        photoURL = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content' +  '?viewBox='+ str(self.settings.photoResolution) #+ '|' + self.getHeadersEncoded()
+                    else:
+                        #photoURL = url
+                        photoURL = 'http://localhost:8011/nodes/'  + str(resourceID) + '/content'
+
                     media = package.package(mediaFile,folder.folder(folderName,''))
-                    media.setMediaURL(mediaurl.mediaurl(url, '','',''))
+                    media.setMediaURL(mediaurl.mediaurl(photoURL, '','',''))
                     return media
 
                 # entry is a photo, but we are not in a photo display
@@ -724,15 +762,15 @@ class acd(cloudservice):
     #   parameters: title of the video file
     #   returns: download url for srt
     ##
-    def getSRT(self, title):
+    def getSRT(self, package):
 
         # retrieve all items
         url = self.API_URL +'files/'
 
         # search for title
-        if title != False:
-            title = os.path.splitext(title)[0]
-            encodedTitle = re.sub(' ', '+', title)
+        if package.file.title != False:
+            title = os.path.splitext(package.file.title)[0]
+            encodedTitle = re.sub(' ', '+', package.file.title)
             url = url + "?q=title+contains+'" + str(encodedTitle) + "'"
 
         srt = []
@@ -961,7 +999,7 @@ class acd(cloudservice):
     #   parameters: package (optional), title of media file, isExact allowing for fuzzy searches
     #   returns: url for playback
     ##
-    def getPlaybackCall(self, package=None, title='', isExact=True):
+    def getPlaybackCall(self, package=None, title='', isExact=True, contentType=7):
 
 
         mediaURLs = []
@@ -971,43 +1009,44 @@ class acd(cloudservice):
         # for playback from STRM with title of video provided (best match)
         if package is None and title != '':
 
-            url = self.API_URL +'files/'
-            # search by video title
-            encodedTitle = re.sub(' ', '+', title)
-            if isExact == True:
-                url = url + "?q=title%3d'" + str(encodedTitle) + "'"
-            else:
-                url = url + "?q=title+contains+'" + str(encodedTitle) + "'"
+            if (0):
+                url = self.API_URL +'files/'
+                # search by video title
+                encodedTitle = re.sub(' ', '+', title)
+                if isExact == True:
+                    url = url + "?q=title%3d'" + str(encodedTitle) + "'"
+                else:
+                    url = url + "?q=title+contains+'" + str(encodedTitle) + "'"
 
-            req = urllib2.Request(url, None, self.getHeadersList())
+                req = urllib2.Request(url, None, self.getHeadersList())
 
-            # if action fails, validate login
-            try:
-                response = urllib2.urlopen(req)
-            except urllib2.URLError, e:
-                if e.code == 403 or e.code == 401:
-                    self.refreshToken()
-                    req = urllib2.Request(url, None, self.getHeadersList())
-                    try:
-                        response = urllib2.urlopen(req)
-                    except urllib2.URLError, e:
+                # if action fails, validate login
+                try:
+                    response = urllib2.urlopen(req)
+                except urllib2.URLError, e:
+                    if e.code == 403 or e.code == 401:
+                        self.refreshToken()
+                        req = urllib2.Request(url, None, self.getHeadersList())
+                        try:
+                            response = urllib2.urlopen(req)
+                        except urllib2.URLError, e:
+                            xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
+                            self.crashreport.sendError('getPlaybackCall-0',str(e))
+                            return
+                    else:
                         xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
                         self.crashreport.sendError('getPlaybackCall-0',str(e))
                         return
-                else:
-                    xbmc.log(self.addon.getAddonInfo('name') + ': ' + str(e), xbmc.LOGERROR)
-                    self.crashreport.sendError('getPlaybackCall-0',str(e))
-                    return
 
-            response_data = response.read()
-            response.close()
+                response_data = response.read()
+                response.close()
 
 
-            for r1 in re.finditer('\{(.*?)\"appDataContents\"\:' ,response_data, re.DOTALL):
-                entry = r1.group(1)
-                package = self.getMediaPackage(entry)
-                docid = package.file.id
-                mediaURLs.append(package.mediaurl)
+                for r1 in re.finditer('\{(.*?)\"appDataContents\"\:' ,response_data, re.DOTALL):
+                    entry = r1.group(1)
+                    package = self.getMediaPackage(entry)
+                    docid = package.file.id
+                    mediaURLs.append(package.mediaurl)
 
         #given docid, fetch original playback
         else:
@@ -1043,9 +1082,10 @@ class acd(cloudservice):
             # video-entry
             for r1 in re.finditer('\{(.*?)\,\"status\"\:\"[^\"]+\"\}' , response_data, re.DOTALL):
                 entry = r1.group(1)
-                media = self.getMediaPackage(entry, contentType=7)
+                media = self.getMediaPackage(entry, contentType=contentType)
                 if media is not None:
                     mediaURLs.append(media.mediaurl)
+                    package = media
 
             #mediaURLs.append(mediaurl.mediaurl(url, 'original', 0, 9999))
             #validate token before proceeding
