@@ -26,8 +26,8 @@ from resources.lib import acd_api
 
 # global variables
 PLUGIN_NAME = 'acd'
-addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
-#addon = xbmcaddon.Addon(id='plugin.video.acd')
+#addon = xbmcaddon.Addon(id='plugin.video.acd-testing')
+addon = xbmcaddon.Addon(id='plugin.video.acd')
 
 cloudservice2 = acd_api.acd
 cloudservice1 = acd_api.acd

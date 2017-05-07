@@ -1,3 +1,4 @@
+- promote to stable
 v0.2.13 (2017-05-07)
 - fix error on account selection screen
 - promote to stable
