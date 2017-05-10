@@ -1681,7 +1681,7 @@ elif mode == 'audio' or mode == 'video' or mode == 'search' or mode == 'play' or
 
 xbmcplugin.endOfDirectory(plugin_handle)
 
-
+# streamer
 if service is not None and service.settings.streamer:
 
     from BaseHTTPServer import BaseHTTPRequestHandler,HTTPServer
