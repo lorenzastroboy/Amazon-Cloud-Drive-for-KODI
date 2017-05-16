@@ -81,7 +81,7 @@ class myStreamer(BaseHTTPRequestHandler):
         response.close()
         return
 
-    #Handler for the POST requests
+    #Handler for the GET requests
     def do_GET(self):
 
         if self.path == '/kill':
